@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Study Extractor</title>
+  <rect x="4" y="4" width="120" height="120" rx="29" fill="#173f3c"/>
+  <path d="M26 33c13-4 25-1 35 6v57c-10-7-22-10-35-6z" fill="#ffffff"/>
+  <path d="M67 39c10-7 22-10 35-6v57c-13-4-25-1-35 6z" fill="#bdebdc"/>
+  <circle cx="94" cy="86" r="24" fill="#247b64" stroke="#173f3c" stroke-width="5"/>
+  <path d="m82 86 8 8 16-17" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

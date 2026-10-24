@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.venv/
+exports/
+.dev-*/
+.dev-*
+dist/
+build/
+*.spec
+*.log
+*.lnk
+.env
+.env.*
+review-*.png
+HANDOFF*.md
+.DS_Store
