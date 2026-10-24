@@ -228,6 +228,9 @@ def check_desktop():
         with patch('extractor.subprocess.Popen') as launch:
             open_folder(Path('/tmp/my exports'))
             launch.assert_called_once_with(['xdg-open', str(Path('/tmp/my exports'))])
+        with patch('extractor.sys.frozen', True, create=True), patch.dict('os.environ', {'LD_LIBRARY_PATH':'/tmp/bundle', 'LD_LIBRARY_PATH_ORIG':'/system/libs'}), patch('extractor.subprocess.Popen') as launch:
+            open_folder(Path('/tmp/my exports'))
+            assert launch.call_args.kwargs['env']['LD_LIBRARY_PATH'] == '/system/libs'
     with patch('extractor.sys.platform', 'darwin'), patch('extractor.subprocess.Popen') as launch:
         open_folder(Path('/tmp/my exports'))
         launch.assert_called_once_with(['open', str(Path('/tmp/my exports'))])

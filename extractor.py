@@ -38,6 +38,11 @@ def user_data_dir():
 def open_folder(path):
     if sys.platform == "win32":
         os.startfile(path)
+    elif sys.platform == "linux" and getattr(sys, "frozen", False):
+        # System file managers must not load the bundled app's shared libraries.
+        environment = os.environ.copy()
+        environment["LD_LIBRARY_PATH"] = environment.get("LD_LIBRARY_PATH_ORIG", "")
+        subprocess.Popen(["xdg-open", str(path)], env=environment)
     else:
         subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(path)])
 

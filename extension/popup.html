@@ -6,6 +6,7 @@
 * {box-sizing:border-box} body {font:14px/1.5 "Segoe UI",Arial,sans-serif;margin:0;padding:20px;width:350px;color:var(--ink);background:var(--bg)}
 .brand {display:flex;gap:10px;align-items:center;margin-bottom:20px} h1 {font-size:18px;letter-spacing:-.02em;font-weight:600;margin:0}
 h2 {font-size:11px;font-weight:600;color:var(--muted);margin:18px 4px 8px} .group {background:var(--surface);border-radius:16px;padding:4px 14px}
+details {margin-top:18px} summary {cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;padding:6px 4px} details[open] summary {margin-bottom:8px}
 label {display:flex;gap:18px;align-items:center;justify-content:space-between;padding:12px 0;cursor:pointer;font-weight:500}
 label + label {border-top:1px solid var(--line)} small {display:block;font-size:12px;line-height:1.5;color:var(--muted);font-weight:400;margin-top:3px}
 input {appearance:none;flex:none;width:36px;height:22px;border-radius:14px;border:1px solid var(--muted);margin:0;background:var(--line);position:relative;cursor:pointer;transition:background 160ms}
@@ -21,11 +22,11 @@ button:hover {filter:brightness(.95)} #status {font-size:11px;color:var(--muted)
 <label for="darkMode"><span>Dark mode<small>For your Udemy pages and study tools.</small></span><input id="darkMode" type="checkbox" role="switch"></label>
 </section>
 <p class="note">Using Dark Reader? Turn it off for Udemy when using this theme.</p>
-<h2>During an exam</h2><section class="group" aria-label="Exam settings">
+<details><summary>Exam controls</summary><section class="group" aria-label="Exam settings">
 <label for="fullHeight"><span>Full-height view</span><input id="fullHeight" type="checkbox" role="switch"></label>
 <label for="hidePause"><span>Hide pause screen<small>Removes blur. The timer stays paused.</small></span><input id="hidePause" type="checkbox" role="switch"></label>
 <label for="keepRunning"><span>Keep exam running<small>Auto-resumes all pauses, including manual ones. The timer keeps running.</small></span><input id="keepRunning" type="checkbox" role="switch"></label>
-</section>
+</section></details>
 <button id="notebook">Notebook & browser exports</button>
 <button id="connect">Connect desktop exporter</button>
 <button id="settings" style="background:transparent;margin-top:6px">Settings</button>

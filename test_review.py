@@ -359,6 +359,8 @@ def main():
         assert popup.locator('#darkMode').is_checked()
         assert popup.locator('input[role=switch]').count() == 5
         assert popup.evaluate('document.documentElement.scrollWidth === innerWidth')
+        assert popup.evaluate('document.body.scrollHeight < 600')
+        popup.get_by_text('Exam controls',exact=True).click()
         popup.locator('#keepRunning').check()
         popup.wait_for_function('saved.keepRunning === true')
         screenshot(popup, 'review-popup.png', full_page=True)
