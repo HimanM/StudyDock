@@ -2,7 +2,7 @@
 (() => {
   if (globalThis.udemyStudyReview) { void globalThis.udemyStudyReview(); return; }
   const defaults = {focusReview: true, darkMode: matchMedia("(prefers-color-scheme: dark)").matches, explanationOpen: innerWidth > 800,
-    explanationSide: "right", explanationWidth: 42, questionTrayOpen: true, reviewCursor: null};
+    explanationSide: "right", explanationWidth: 42, questionTrayOpen: true, reviewCursor: null, notesEnabled: true};
   const wrapper = '[class*="result-pane--question-result-pane-wrapper--"]';
   const rich = '[data-purpose="safely-set-inner-html:rich-text-viewer:html"]';
   const text = node => (node?.textContent || "").replace(/\s+/g, " ").trim();
@@ -15,15 +15,17 @@
   style.id = "udemy-study-review-page-style";
   style.textContent = `
     html[data-study-focus] {overflow:hidden!important}
-    html[data-study-focus] body > :not(#udemy-study-review):not(script):not(style) {visibility:hidden!important;pointer-events:none!important}
+    html[data-study-focus] body > :not(#udemy-study-review):not(#studydock-notes):not(script):not(style) {visibility:hidden!important;pointer-events:none!important}
     #udemy-study-review {position:fixed;inset:0;z-index:2147483600;visibility:visible!important}
     #udemy-study-review-launch {position:fixed;right:22px;bottom:24px;z-index:2147483500;border:0;
       border-radius:24px;background:#dce9fc;color:#285ea8;padding:12px 20px;font:600 14px/1.4 system-ui;cursor:pointer;box-shadow:0 3px 15px #0002}
     html[data-study-dark] {color-scheme:dark}
     html[data-study-dark] body {background:#171b20!important;color:#e0e4eb!important}
     html[data-study-dark] [data-study-native-surface] {background-color:#20252b!important;border-color:#3c4550!important}
-    html[data-study-dark] [data-study-native-ink] {color:#e0e4eb!important}
-    html[data-study-dark] a:not(.ud-btn) {color:#adcaff}
+    html[data-study-dark] [data-study-native-ink] {color:#eef1f6!important}
+    html[data-study-dark] [data-study-native-ink=dark] {color:#20252c!important}
+    html[data-study-dark] a[data-study-native-ink]:not(.ud-btn) {color:#b8d3fa!important}
+    html[data-study-dark] a[data-study-native-ink=dark]:not(.ud-btn) {color:#1e4b89!important}
     html[data-study-dark] #udemy-study-review-launch {background:#2a405d;color:#adcaff}
     #udemy-study-review-launch:focus-visible {outline:2px solid #285ea8;outline-offset:3px}
 
@@ -380,6 +382,13 @@
     };
     const explain = control(settings.explanationOpen ? "Hide explanation" : "Show explanation", "panel", "explanation", () => { save({explanationOpen: !settings.explanationOpen}); render(); }, settings.explanationOpen);
     explain.className = "label-button"; explain.append(el("span", "", "Explanation"));
+    if (settings.notesEnabled && globalThis.StudyDockNoteUI && matchingIndexes().length) {
+      const notes = button("Notes", () => {
+        const question = questions[active];
+        void StudyDockNoteUI.open(question.node.querySelector('[id="question-prompt"]'), question.number, notes);
+      }, "label-button");
+      controls.append(notes);
+    }
     control(settings.darkMode ? "Light mode" : "Dark mode", settings.darkMode ? "sun" : "moon", "theme", () => { save({darkMode: !settings.darkMode}); applyTheme(); });
     const menu = el("details", "settings"), summary = el("summary");
     summary.append(icon("more")); summary.setAttribute("aria-label", "Review settings and shortcuts"); summary.title = "Settings and shortcuts"; summary.dataset.control = "settings";
@@ -501,29 +510,38 @@
       });
       themedNodes = new WeakSet(); return;
     }
-    const neutral = value => {
-      const channels = value.match(/[\d.]+/g)?.map(Number);
-      if (!channels || channels.length < 3 || (channels.length > 3 && channels[3] < .8)) return null;
-      const [r, g, b] = channels;
-      return Math.max(r,g,b) - Math.min(r,g,b) < 45 ? (r+g+b)/3 : null;
-    };
-    const onLightColor = node => {
-      for (let parent = node; parent && parent !== document.body; parent = parent.parentElement) {
-        const value = getComputedStyle(parent).backgroundColor;
-        const channels = value.match(/[\d.]+/g)?.map(Number);
-        if (!channels || (channels.length > 3 && channels[3] < .8)) continue;
-        return neutral(value) === null && (channels[0] + channels[1] + channels[2]) / 3 > 150;
+    const rgb = value => value.match(/^rgba?\(([^)]+)\)/)?.[1].match(/[\d.]+/g)?.map(Number);
+    const pale = color => color && (color[3] ?? 1) >= .8 && Math.max(...color.slice(0,3)) - Math.min(...color.slice(0,3)) < 45 && color.slice(0,3).reduce((a,b) => a+b)/3 > 185;
+    const luminance = color => color.slice(0,3).map(value => value/255).map(value => value <= .04045 ? value/12.92 : ((value+.055)/1.055)**2.4).reduce((sum,value,index) => sum + value * [.2126,.7152,.0722][index],0);
+    const contrast = (a,b) => (Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
+    const nodes = all('body *').filter(node => !themedNodes.has(node) && node.namespaceURI === 'http://www.w3.org/1999/xhtml' &&
+      !node.closest('#udemy-study-review,#studydock-notes,script,style,video,canvas,picture') && !node.matches('img,iframe'));
+    const colors = new Map();
+    const read = node => {
+      if (!colors.has(node)) {
+        const style = getComputedStyle(node);
+        colors.set(node,{background:rgb(style.backgroundColor),ink:rgb(style.color)});
       }
-      return false;
+      return colors.get(node);
     };
-    // Udemy mixes CSS variables and hard-coded colors; preserve colored charts and media.
-    for (const node of all("body *")) {
-      if (themedNodes.has(node) || node.namespaceURI !== "http://www.w3.org/1999/xhtml" ||
-          node.closest("#udemy-study-review,script,style,video,canvas,picture") || node.matches("img,iframe")) continue;
-      themedNodes.add(node);
-      const computed = getComputedStyle(node), background = neutral(computed.backgroundColor), ink = neutral(computed.color);
-      if (background !== null && background > 185) node.setAttribute("data-study-native-surface", "");
-      if (ink !== null && ink < 160 && !onLightColor(node)) node.setAttribute("data-study-native-ink", "");
+    const backgroundFor = node => {
+      for (let parent=node; parent; parent=parent.parentElement) {
+        const color = read(parent).background;
+        if (pale(color) || parent.hasAttribute('data-study-native-surface')) return [32,37,43];
+        if (color && (color[3] ?? 1) >= .8) return color;
+      }
+      return [23,27,32];
+    };
+    // Set surfaces first, then repair inherited text from parent to child, including colored charts.
+    const updates = nodes.map(node => ({node,pale:pale(read(node).background),surface:backgroundFor(node)}));
+    for (const update of updates) {
+      themedNodes.add(update.node);
+      if (update.pale) update.node.setAttribute('data-study-native-surface','');
+    }
+    for (const {node,surface} of updates) {
+      const ink = rgb(getComputedStyle(node).color);
+      const visible = ink?.slice(0,3).map((value,index) => value*(ink[3] ?? 1) + surface[index]*(1-(ink[3] ?? 1)));
+      if (visible && contrast(visible,surface) < 4.5) node.setAttribute('data-study-native-ink',luminance(surface) > .179 ? 'dark' : 'light');
     }
   }
   function applyTheme() {
@@ -572,7 +590,14 @@
       else { dismissed = path; closeReview(); sync(); }
     }
   });
-  new MutationObserver(schedule).observe(document.body, {subtree: true, childList: true});
+  new MutationObserver(records => {
+    for (const record of records) if (record.type === 'attributes') {
+      for (const node of [record.target,...record.target.querySelectorAll('*')]) {
+        themedNodes.delete(node); node.removeAttribute('data-study-native-ink'); node.removeAttribute('data-study-native-surface');
+      }
+    }
+    schedule();
+  }).observe(document.body, {subtree: true, childList: true, attributes:true, attributeFilter:['class','style']});
   window.addEventListener("popstate", schedule);
   setInterval(() => { if (path !== location.pathname) sync(); }, 1000);
   globalThis.udemyStudyReview = async () => { settings = await chrome.storage.local.get(defaults); sync(); };

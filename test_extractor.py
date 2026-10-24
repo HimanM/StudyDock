@@ -16,7 +16,8 @@ def check_exports():
                      {"label": "B", "text": "West", "selected": False, "correct": True}],
          "selected_answers": ["A"], "correct_answers": ["B"], "is_correct": False,
          "status": "incorrect", "explanation": "Author puts the correct answer last.",
-         "marked_for_review": True, "tags": ["marked_for_review", "incorrect"]}
+         "marked_for_review": True, "tags": ["marked_for_review", "incorrect"],
+         "notes": {"text": "Remember regional availability.", "updated_at": "2026-10-24T00:00:00Z"}}
     source = {"title": 'AZ-104 / test: one', "url": "https://www.udemy.com/test", "expected_count": 45,
               "questions": [{**copy.deepcopy(q), "number": i} for i in range(1, 46)]}
     before = copy.deepcopy(source)
@@ -31,10 +32,12 @@ def check_exports():
         assert "correct_answers" not in item and "explanation" not in item and "is_correct" not in item
         assert "correct" not in item["options"][0] and "explanation" not in item["options"][0]
         assert item["selected_answers"] == ["A"] and item["tags"] == ["marked_for_review"]
+        assert item["notes"]["text"] == q["notes"]["text"]
         md = write_export(source, folder, "md", 5)[0].read_text(encoding="utf-8")
         assert "## Question 5" in md and "## Question 6" not in md
         assert "Correct answer(s): B" in md and "Marked for review: **Yes**" in md
         assert "![Map]" in md and "Author puts the correct answer last." in md
+        assert "### Your notes" in md and q["notes"]["text"] in md
         assert write_export(source, folder, "json", 20)[0] != files[0]
         assert all(path.exists() for path in files)
     assert source == before
@@ -192,6 +195,12 @@ def check_connection_and_gui():
             assert app.style.lookup("Treeview", "fieldbackground") == ("#20252b" if app.dark else "#ffffff")
             app.toggle_theme()
             assert app.style.lookup("Treeview", "fieldbackground") == "#20252b"
+            with patch('extractor.sys.platform', 'linux'), patch('extractor.sys.frozen', True, create=True), \
+                 patch('extractor.user_data_dir', return_value=Path(folder)/'user'), patch('extractor.messagebox.showinfo'):
+                app.setup_help()
+                extension = Path(folder)/'user/extension'
+                assert (extension/'manifest.json').is_file()
+                assert app.clipboard_get() == str(extension)
         app.withdraw()
         app.refresh_tabs()
         assert app.tabs.get_children() == ("1",)

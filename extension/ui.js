@@ -2,7 +2,7 @@
 // See LICENSE-fullheight.txt. Settings and pause-screen handling are extension additions.
 (() => {
   if (globalThis.udemyStudyUI) { globalThis.udemyStudyUI(); return; }
-  let settings = {fullHeight: false, hidePause: false, keepRunning: false};
+  let settings = {fullHeight: false, hidePause: false, keepRunning: false, examToolbar: true};
   let scheduled = false;
   let pauseContainer = null;
   let resumedContainer = null;
@@ -37,7 +37,7 @@
     let css = onExam && settings.fullHeight ? `
       [class*="curriculum-item-view--scaled-height-limiter"] {
         max-block-size: none !important;
-        height: calc(100vh - ${footer?.offsetHeight || 0}px) !important;
+        height: calc(100dvh - ${footer?.offsetHeight || 0}px) !important;
       }` : "";
     const resume = document.querySelector('[data-purpose="unpause-test"]');
     const container = resume?.closest('[class*="modal-module--dialog-container--"]');
@@ -71,6 +71,15 @@
       `;
     }
     css += `
+      [data-studydock-footer] {background:#fff!important;color:#20252c!important;border-color:#d7dfe8!important;gap:8px!important;}
+      [data-studydock-footer] button {border-radius:20px!important;min-height:36px!important;color:#285ea8!important;background:#e7edf5!important;border:0!important;transition:background-color 160ms,color 160ms;}
+      [data-studydock-footer] button:hover {background:#dce9fc!important;}
+      [data-studydock-footer] button:focus-visible {outline:2px solid #285ea8!important;outline-offset:3px;}
+      [data-studydock-footer] button:disabled {opacity:.55;cursor:default;}
+      html[data-study-dark] [data-studydock-footer] {background:#20252b!important;color:#eef1f6!important;border-color:#536071!important;}
+      html[data-study-dark] [data-studydock-footer] button {background:#2c333c!important;color:#c1d8fa!important;}
+      html[data-study-dark] [data-studydock-footer] button:hover {background:#2a405d!important;}
+      [data-studydock-footer] button svg {fill:currentColor!important;color:inherit!important;}
       #udemy-study-height-toggle {border:0!important;border-radius:20px!important;padding:8px 14px!important;
         min-height:36px!important;background:#e7edf5!important;color:#285ea8!important;font:500 13px/1.5 system-ui!important;
         transition:background-color 160ms,color 160ms;}
@@ -82,8 +91,12 @@
       html[data-study-dark] #udemy-study-height-toggle[aria-pressed=true] {background:#2a405d!important;}
       html[data-study-dark] [data-study-pause] [role=dialog] {background:#20252b!important;color:#e0e4eb!important;}
       html[data-study-dark] [data-study-pause] [data-purpose=unpause-test] {background:#2a405d!important;color:#adcaff!important;}
-      @media(prefers-reduced-motion:reduce) {#udemy-study-height-toggle {transition:none;}}
+      #udemy-study-height-toggle {display:inline-flex!important;align-items:center;gap:7px;white-space:nowrap;}
+      #udemy-study-height-toggle[hidden] {display:none!important;}
+      @media(prefers-reduced-motion:reduce) {#udemy-study-height-toggle,[data-studydock-footer] button {transition:none;}}
     `;
+    if (onExam) footer?.setAttribute('data-studydock-footer','');
+    else document.querySelectorAll('[data-studydock-footer]').forEach(node => node.removeAttribute('data-studydock-footer'));
     if (style.textContent !== css) style.textContent = css;
     const buttonId = "udemy-study-height-toggle";
     let button = document.getElementById(buttonId);
@@ -93,13 +106,17 @@
       button.id = buttonId;
       button.type = "button";
       button.className = "ud-btn ud-btn-large ud-btn-ghost ud-btn-text-md";
+      // Google Material unfold_more (Apache 2.0).
+      button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></svg><span></span>';
       button.addEventListener("click", () => chrome.storage.local.set({fullHeight: !settings.fullHeight}));
       const anchor = expanded.closest('[class*="popper-module--popper"]') || expanded;
       anchor.after(button);
     }
     if (button) {
-      const label = settings.fullHeight ? "Full height: on" : "Full height: off";
-      if (button.textContent !== label) button.textContent = label;
+      button.hidden = !onExam || !settings.examToolbar;
+      const label = settings.fullHeight ? "Full height on" : "Full height";
+      if (button.querySelector('span').textContent !== label) button.querySelector('span').textContent = label;
+      button.title = settings.fullHeight ? 'Restore normal question height' : 'Use the full available height';
       if (button.getAttribute("aria-pressed") !== String(settings.fullHeight)) button.setAttribute("aria-pressed", String(settings.fullHeight));
     }
   }
@@ -109,7 +126,7 @@
   globalThis.udemyStudyUI = async () => { settings = await chrome.storage.local.get(settings); apply(); };
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
-    for (const key of ["fullHeight", "hidePause", "keepRunning"]) if (changes[key]) settings[key] = changes[key].newValue;
+    for (const key of ["fullHeight", "hidePause", "keepRunning", "examToolbar"]) if (changes[key]) settings[key] = changes[key].newValue;
     if (changes.keepRunning) resumedContainer = null;
     apply();
   });

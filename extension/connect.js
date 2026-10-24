@@ -43,7 +43,7 @@ async function extract(command) {
         void chrome.tabs.get(tab.id).then(current => { if (!current.discarded && current.status === "complete") finish(); }, finish);
       });
     }
-    const injected = await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ["extractor.js"]});
+    const injected = await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ["notes-store.js", "extractor.js"]});
     if (!injected[0]?.result) throw new Error("Udemy returned no data. Reload the results tab and retry.");
     result = {id: command.id, data: injected[0].result};
   } catch (error) {

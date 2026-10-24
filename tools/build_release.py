@@ -6,7 +6,6 @@ import platform
 import shutil
 import subprocess
 import sys
-import tarfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,30 +19,30 @@ def main():
     if sys.platform == "darwin":
         from PIL import Image
         icon = output / "study.icns"
-        Image.open(ROOT / "extension/icons/icon-256.png").save(icon)
-    args = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onedir", "--windowed",
-            "--name", "UdemyStudyTools", "--add-data", f"{ROOT / 'extension'}:extension",
+        Image.open(ROOT / "extension/icons/studydock.png").save(icon)
+    args = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean", "--onefile" if sys.platform == "linux" else "--onedir", "--windowed",
+            "--name", "StudyDock", "--add-data", f"{ROOT / 'extension'}:extension",
             "--add-data", f"{ROOT / 'LICENSE'}:.", "--icon", str(icon),
             "--osx-bundle-identifier", "com.himanm.UdemyStudyTools", str(ROOT / "extractor.py")]
     subprocess.run(args, cwd=ROOT, check=True)
-    folder = output / "UdemyStudyTools"
-    executable = folder / ("UdemyStudyTools.exe" if sys.platform == "win32" else "UdemyStudyTools")
+    folder = output / "StudyDock"
+    executable = folder if sys.platform == "linux" else folder / "StudyDock.exe"
     if sys.platform == "darwin":
-        executable = output / "UdemyStudyTools.app/Contents/MacOS/UdemyStudyTools"
+        executable = output / "StudyDock.app/Contents/MacOS/StudyDock"
     subprocess.run([str(executable), "--smoke-test"], check=True, timeout=60)
     label = {"win32": "windows-x64", "linux": "linux-x64", "darwin": f"macos-{'arm64' if platform.machine() == 'arm64' else 'x64'}"}[sys.platform]
-    prefix = f"Udemy-Study-Tools-{version}-{label}"
+    prefix = f"StudyDock-{version}-{label}"
     artifacts = []
     if sys.platform == "darwin":
         stage = output / "dmg"
         stage.mkdir(exist_ok=True)
-        app = stage / "Udemy Study Tools.app"
+        app = stage / "StudyDock.app"
         if app.exists():
             raise RuntimeError("Remove the previous dist/dmg build directory before rebuilding.")
-        shutil.copytree(output / "UdemyStudyTools.app", app, symlinks=True)
+        shutil.copytree(output / "StudyDock.app", app, symlinks=True)
         (stage / "Applications").symlink_to("/Applications", target_is_directory=True)
         destination = output / f"{prefix}.dmg"
-        subprocess.run(["hdiutil", "create", "-volname", "Udemy Study Tools", "-srcfolder", str(stage), "-ov", "-format", "UDZO", str(destination)], check=True)
+        subprocess.run(["hdiutil", "create", "-volname", "StudyDock", "-srcfolder", str(stage), "-ov", "-format", "UDZO", str(destination)], check=True)
         artifacts.append(destination)
     elif sys.platform == "win32":
         iscc = shutil.which("ISCC") or r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
@@ -56,14 +55,12 @@ def main():
                     archive.write(file, file.relative_to(output))
         artifacts.append(destination)
     else:
-        destination = output / f"{prefix}.tar.gz"
-        with tarfile.open(destination, "w:gz") as archive:
-            archive.add(folder, arcname="UdemyStudyTools")
-            archive.add(ROOT / "packaging/install-linux.sh", arcname="install.sh")
+        destination = output / f"{prefix}.bin"
+        shutil.copy2(executable, destination)
         artifacts.append(destination)
     # The extension remains a normal unpacked MV3 extension, installed separately in Chrome.
     if sys.platform == "win32":
-        destination = output / f"Udemy-Study-Tools-{version}-chrome.zip"
+        destination = output / f"StudyDock-{version}-chrome.zip"
         with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:
             for file in (ROOT / "extension").rglob("*"):
                 if file.is_file():

@@ -1,0 +1,9 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>StudyDock notebook</title>
+<link rel="icon" href="icons/icon-32.png"><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="pages.css"></head><body><main>
+<header><div class="brand"><img src="icons/icon-48.png" width="40" height="40" alt=""><div><h1>Notebook & exports</h1><p>Your study material, directly from the browser.</p></div></div><a href="settings.html">Settings</a></header>
+<section><h2>Export a completed test</h2><label for="tab">Udemy tab</label><select id="tab"></select>
+<div class="fields"><label>Include<select id="detail"><option value="full">Answers, explanations & notes</option><option value="basic">Questions, your answers & notes</option></select></label><label>Format<select id="format"><option value="md">Markdown</option><option value="json">JSON</option></select></label><label>Questions per file<input id="limit" type="text" value="20" list="limits"><datalist id="limits"><option>5</option><option>10</option><option>20</option><option>All</option></datalist></label></div>
+<div class="actions"><button id="export">Prepare downloads</button><button class="quiet" id="refresh">Refresh tabs</button></div><p id="export-status" role="status"></p><div id="downloads" class="downloads"></div></section>
+<section><h2>Saved question notes</h2><label for="quiz">Test</label><select id="quiz"><option value="">All tests</option></select><p>Notes only, with the question number from when each note was saved. Retakes can use a different order.</p>
+<div class="actions"><button id="notes-md">Download Markdown</button><button id="notes-json" class="quiet">Download JSON</button></div><p id="notes-status" role="status"></p><div id="notes"></div></section>
+</main><script src="notes-store.js"></script><script src="browser-export.js"></script><script src="notebook.js"></script></body></html>

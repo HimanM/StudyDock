@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><title>Udemy study tools</title>
+<html lang="en"><head><meta charset="utf-8"><title>StudyDock</title>
 <link rel="icon" type="image/png" href="icons/icon-32.png">
 <link rel="stylesheet" href="theme.css">
 <style>
@@ -15,7 +15,7 @@ input:checked {background:var(--accent);border-color:var(--accent)} input:checke
 button:hover {filter:brightness(.95)} #status {font-size:11px;color:var(--muted);margin:10px 4px 0} .note {font-size:11px;color:var(--muted);margin:10px 4px 0}
 @media(prefers-reduced-motion:reduce) {* {transition:none!important}}
 </style></head><body>
-<header class="brand"><img src="icons/icon-48.png" width="32" height="32" alt=""><h1>Study tools</h1></header>
+<header class="brand"><img src="icons/icon-48.png" width="32" height="32" alt=""><h1>StudyDock</h1></header>
 <h2>Review</h2><section class="group" aria-label="Review settings">
 <label for="focusReview"><span>Focused review<small>One question and explanation at a time.</small></span><input id="focusReview" type="checkbox" role="switch"></label>
 <label for="darkMode"><span>Dark mode<small>For your Udemy pages and study tools.</small></span><input id="darkMode" type="checkbox" role="switch"></label>
@@ -26,6 +26,8 @@ button:hover {filter:brightness(.95)} #status {font-size:11px;color:var(--muted)
 <label for="hidePause"><span>Hide pause screen<small>Removes blur. The timer stays paused.</small></span><input id="hidePause" type="checkbox" role="switch"></label>
 <label for="keepRunning"><span>Keep exam running<small>Auto-resumes all pauses, including manual ones. The timer keeps running.</small></span><input id="keepRunning" type="checkbox" role="switch"></label>
 </section>
-<button id="connect">Connect to Python exporter</button>
+<button id="notebook">Notebook & browser exports</button>
+<button id="connect">Connect desktop exporter</button>
+<button id="settings" style="background:transparent;margin-top:6px">Settings</button>
 <p id="status" role="status">Settings are saved across your Udemy tabs.</p>
 <script src="popup.js"></script></body></html>

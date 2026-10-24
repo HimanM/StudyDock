@@ -40,3 +40,5 @@ jobs:
         run: xvfb-run -a python -X utf8 test_extractor.py
       - name: Review and extension checks
         run: python -X utf8 test_review.py
+      - name: Browser notebook and settings
+        run: python -X utf8 test_notebook.py

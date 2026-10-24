@@ -1,18 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Udemy Study Tools",
-  "version": "1.3.0",
-  "description": "Focused Udemy practice review, saved split-pane layout, dark mode and local study exports.",
+  "name": "StudyDock",
+  "version": "1.4.0",
+  "description": "Question notes, focused Udemy review, readable dark mode and private browser or desktop study exports.",
   "permissions": ["tabGroups", "scripting", "storage"],
   "host_permissions": ["https://*.udemy.com/*", "http://127.0.0.1:8765/*"],
   "icons": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png", "128": "icons/icon-128.png"},
   "action": {
-    "default_title": "Udemy study tools", "default_popup": "popup.html",
+    "default_title": "StudyDock", "default_popup": "popup.html",
     "default_icon": {"16": "icons/icon-16.png", "32": "icons/icon-32.png", "48": "icons/icon-48.png"}
   },
   "background": {"service_worker": "background.js"},
+  "options_page": "settings.html",
   "content_scripts": [
-    {"matches": ["https://*.udemy.com/course/*"], "js": ["ui.js"], "run_at": "document_idle"},
+    {"matches": ["https://*.udemy.com/course/*/learn/quiz/*", "https://*.udemy.com/course/*/learn/practice/*"], "js": ["notes-store.js", "notes.js", "ui.js"], "run_at": "document_idle"},
     {"matches": ["https://*.udemy.com/*"], "js": ["review.js"], "run_at": "document_idle"}
   ]
 }

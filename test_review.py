@@ -312,10 +312,28 @@ def main():
         install(page, {'focusReview':False, 'darkMode':True})
         page.wait_for_function("document.querySelector('#native-card').getAttribute('data-study-native-surface') !== null")
         assert page.locator('#native-card').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgb(32, 37, 43)'
-        assert page.locator('#native-card h2').evaluate('n=>getComputedStyle(n).color') == 'rgb(224, 228, 235)'
+        assert page.locator('#native-card h2').evaluate('n=>getComputedStyle(n).color') == 'rgb(238, 241, 246)'
         assert page.locator('#colored-chart').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgb(166, 233, 183)'
         assert page.locator('#colored-chart').evaluate('n=>getComputedStyle(n).color') == 'rgb(32, 32, 32)'
         assert page.locator('#native-card img').evaluate('n=>getComputedStyle(n).filter') == 'none'
+        page.evaluate('''() => {
+          const samples=document.createElement('section'); samples.id='contrast-samples'; samples.style.cssText='background:white;color:#202020';
+          samples.innerHTML='<h2 style="color:#dbe1eb">Light text on a white card</h2><p style="color:rgba(30,30,30,.4)">Low alpha caption</p><a href="#" style="color:#493e88">Dark link</a><div style="background:#ffeaa7"><span>Inherited chart label</span></div><button style="background:#6d28d9;color:white">Retake test</button>';
+          document.body.append(samples);
+        }''')
+        page.wait_for_function("document.querySelector('#contrast-samples').hasAttribute('data-study-native-surface')")
+        assert page.locator('#contrast-samples').evaluate('''root => {
+          const rgb=value=>value.match(/[\\d.]+/g).slice(0,3).map(Number);
+          const luminance=color=>color.map(v=>v/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+          return [...root.querySelectorAll('h2,p,a,span,button')].every(node=>{
+            let parent=node; while(getComputedStyle(parent).backgroundColor==='rgba(0, 0, 0, 0)') parent=parent.parentElement;
+            const a=luminance(rgb(getComputedStyle(node).color)),b=luminance(rgb(getComputedStyle(parent).backgroundColor));
+            return (Math.max(a,b)+.05)/(Math.min(a,b)+.05)>=4.5;
+          });
+        }''')
+        page.locator('#contrast-samples p').evaluate("node=>node.style.color='#393939'")
+        page.wait_for_function("getComputedStyle(document.querySelector('#contrast-samples p')).color === 'rgb(238, 241, 246)'")
+        screenshot(page,'native-contrast.png')
         page.evaluate("chrome.storage.local.set({darkMode:false})")
         assert page.locator('#native-card').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgb(255, 255, 255)'
         assert page.locator('[data-study-native-surface],[data-study-native-ink]').count() == 0
@@ -323,7 +341,7 @@ def main():
         popup = browser.new_page(viewport={'width': 350, 'height': 660})
         popup.on('pageerror', lambda error: errors.append(str(error)))
         popup.add_init_script('''window.saved = {darkMode:true}; window.chrome = {
-          storage:{local:{get:async defaults=>({...defaults,...saved}),set:async values=>Object.assign(saved,values)}},
+          storage:{local:{get:async defaults=>({...defaults,...saved}),set:async values=>Object.assign(saved,values)},onChanged:{addListener:()=>{}}},
           tabs:{query:async()=>[]}, scripting:{executeScript:async()=>{}}, runtime:{getURL:path=>path}};''')
         popup.goto((ROOT / 'extension/popup.html').resolve().as_uri())
         popup.wait_for_function("document.documentElement.hasAttribute('data-dark')")

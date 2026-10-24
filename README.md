@@ -1,6 +1,6 @@
-# Udemy Study Tools
+# StudyDock
 
-A Chrome extension and desktop exporter for studying completed Udemy practice tests. Read one question at a time, inspect explanations and diagrams, then export your answers into small Markdown or JSON batches for study notes.
+A Chrome extension for Udemy practice exams, question notes and focused review, with an optional desktop exporter. Read one question at a time, inspect explanations and diagrams, and export Markdown or JSON batches for study notes.
 
 ![Focused review in dark mode](docs/focus-review.png)
 
@@ -11,9 +11,12 @@ A Chrome extension and desktop exporter for studying completed Udemy practice te
 - **Consistent appearance:** light/dark themes, Material icons, comfortable reading widths, and short transitions that respect reduced-motion preferences.
 - **Native Udemy dark mode:** themes neutral surfaces and text on the original page, including hard-coded white cards. Colored charts and media retain their original colors.
 - **Exam controls:** full-height view, optional pause-overlay removal, and optional auto-resume.
-- **Desktop exports:** choose Chrome tabs, export detail, Markdown/JSON, and any whole-number batch size from 5 upward, or All. The default is 20.
+- **Question notes:** write beside an exam question or in focused review. Notes save locally in Chrome and join matching questions in exports.
+- **Browser exports:** export completed tests or just your notes without running the desktop app. Choose Markdown/JSON and question batches of 5 or more, or All; default 20.
+- **Settings:** hide desktop integration and the extra full-height shortcut, enable/disable notes, and choose appearance and exam behavior. Creator/source links live here.
+- **Optional desktop exports:** select multiple Chrome tabs and save batches directly to your chosen folder.
 
-Focused review needs only the extension. Exporting also needs the desktop app. Reviewing/exporting never answers questions, changes review marks, or submits/retakes a test. Auto-resume is a separate opt-in setting that operates Udemy's Resume control.
+Review, notes and browser downloads need only the extension. Reviewing/exporting never answers questions, changes review marks, or submits/retakes a test. Auto-resume is a separate opt-in setting that operates Udemy's Resume control.
 
 ## Install
 
@@ -24,9 +27,18 @@ Download the matching package from [Releases](https://github.com/HimanM/Udemy-St
 | Windows 10/11, x64 | `windows-x64-setup.exe` | Run the installer. It installs for your account and adds Start-menu and desktop shortcuts. A portable ZIP is also available. |
 | macOS 14+, Apple Silicon | `macos-arm64.dmg` | Open the disk image and drag the app to Applications. |
 | macOS 15+, Intel | `macos-x64.dmg` | Open the disk image and drag the app to Applications. |
-| Linux x64, glibc 2.35+ | `linux-x64.tar.gz` | Extract the archive, then run `sh install.sh` from its folder. This installs for your account and creates application-menu and desktop entries with the app icon. No sudo needed. |
+| Linux x64, glibc 2.35+ | `linux-x64.bin` | One executable with Python/Tk bundled. Run directly, or use `--install` to create application-menu and desktop entries with the icon. No sudo needed. |
 
-Linux builds target Ubuntu 22.04 or newer and compatible desktop distributions. Tk requires a graphical session (X11 or XWayland). Some desktop environments require **Allow Launching** on a new desktop icon, or disable desktop icons entirely; the application-menu entry remains available. Alpine/musl and Linux ARM are not covered by these packages.
+Linux builds target Ubuntu 22.04 or newer and compatible glibc desktop distributions. No Python, pip, virtual environment, FUSE, or separate app runtime installation is needed. A graphical desktop with its usual X11/XWayland system libraries is required. A single binary cannot cover incompatible CPU/libc families: Alpine/musl, older glibc, and Linux ARM are not covered. See [PyInstaller's Linux compatibility explanation](https://pyinstaller.org/en/stable/usage.html#making-gnu-linux-apps-forward-compatible).
+
+Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.0/StudyDock-1.4.0-linux-x64.bin) while signed into GitHub, then run from that download directory:
+
+```sh
+chmod +x StudyDock-1.4.0-linux-x64.bin
+./StudyDock-1.4.0-linux-x64.bin --install
+```
+
+Omit `--install` to run it without installation. The installed binary and icon go under your user data directory. The Chrome setup button copies the bundled extension to a permanent folder, so Chrome never depends on a temporary unpacking directory. Some desktops require **Allow Launching** on a new desktop icon, or disable desktop icons entirely; the application-menu entry remains available. As a private GitHub release, this is not an anonymous `curl | sh` URL.
 
 The Windows and macOS packages are **unsigned**; no publisher certificate or Apple notarization credentials are configured. Windows may show SmartScreen, and macOS may require approval in System Settings → Privacy & Security after an attempted launch. Only open packages from this repository that you trust. Checksums accompany each release.
 
@@ -34,7 +46,7 @@ The Windows and macOS packages are **unsigned**; no publisher certificate or App
 
 1. Download and extract the release's `chrome.zip` into a permanent folder.
 2. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**.
-3. Choose the extracted `extension` folder. Pin **Udemy Study Tools** from Chrome's Extensions menu.
+3. Choose the extracted `extension` folder. Pin **StudyDock** from Chrome's Extensions menu.
 4. Open a completed test attempt in Udemy and select **Review questions**.
 
 The extension is installed locally; it is not published to the Chrome Web Store. Your existing Udemy login stays in Chrome. The desktop app's **Chrome setup** button can also show/copy the bundled extension path.
@@ -69,20 +81,38 @@ Keep-running takes precedence over hiding the pause screen. If you use the origi
 
 ## Export for study
 
+### In the browser
+
+Open StudyDock → **Notebook & browser exports**. Select a completed-results tab, detail level, file format and batch size. **Prepare downloads** reads the test and creates download links for each part. Click each file to save it through Chrome. No desktop process or polling connection is needed.
+
+![Browser notebook and exports in dark mode](docs/notebook.png)
+
+The lower half of this page lists saved notes. Filter by test and download notes-only Markdown or JSON with question numbers and source links. Notes-only downloads do not include question text or answer keys.
+
+### Question notes
+
+Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. The panel keeps its labelled question while you navigate, so typing cannot silently move a note to another question. Close it with Close or Escape. If Udemy's question number cannot be detected, you can enter it yourself.
+
+Notes match normalized prompt text, question-image paths and available answer-choice text within the same quiz. Numbers and answer order do not identify a question. Notes therefore follow matching questions across attempts; changed question content or an unrecognized author/layout may prevent a match. Notes-only question numbers reflect the last saved source attempt. In full-test exports, notes appear under the current question number.
+
+Notes live in this Chrome profile's extension storage, not in Udemy or the desktop app. Export a backup before uninstalling the extension or clearing its data. Disabling Question notes only hides the editor. To clear a note, erase its text; it will no longer appear in notes-only downloads. Each note supports up to 60,000 characters, subject to Chrome's total local-storage quota. Simultaneous edits to the same note in multiple tabs use the last saved version; the editor warns when another tab changes it.
+
+### With the desktop app
+
 1. Launch the desktop app.
-2. Click the extension → **Connect to Python exporter**, and leave the connection tab open.
+2. Click the extension → **Connect desktop exporter**, and leave the connection tab open. Enable Desktop integration in Settings if this button is hidden.
 3. In the app, select one or more completed-results tabs. Search by tab group, title, or URL; Ctrl/Cmd or Shift selects multiple tabs.
 4. Choose detail level, Markdown or JSON, questions per file, and an output folder.
 5. Click **Export selected tabs**. Open the output folder when finished.
 
 | Detail level | Includes |
 | --- | --- |
-| Questions & your answers | Question, all options, selected answers, review flag/tag, domain |
+| Questions & your answers | Question, all options, selected answers, review flag/tag, domain, your notes |
 | Full detail | Everything above, plus correct answers, result tags, overall explanation, and per-choice explanations |
 
 Correct answers come from **Udemy's labels**, never guesses based on the author's explanation order. Full explanations preserve rich text, links, tables, code and image URLs. Authors can explain correct and incorrect choices in any order. Multi-select answers remain arrays in JSON. Skipped questions are included with empty selections.
 
-Every export creates a new folder per tab/attempt. Files include source URL, attempt, timestamp, and part number. For example, 88 questions split into 20 gives 20 + 20 + 20 + 20 + 8. Basic mode excludes answer-key fields and result tags. Marked questions include `marked_for_review: true` and a matching tag.
+Desktop exports create a new folder per tab/attempt; browser exports create separately named downloads. Files include source URL, attempt, timestamp, and part number. For example, 88 questions split into 20 gives 20 + 20 + 20 + 20 + 8. Basic mode excludes Udemy's answer-key fields and result tags, but includes your own notes as written. Marked questions include `marked_for_review: true` and a matching tag. Question notes use `notes: {text, updated_at}` in JSON and a Your notes section in Markdown.
 
 Images are referenced by URL, not downloaded or transcribed. URLs can require Udemy access or expire. When asking an LLM about a diagram, attach the diagram as well as the exported text.
 
@@ -100,7 +130,7 @@ Exports default to the `exports` subfolder; you can choose another folder. The d
 
 ## Update or uninstall
 
-Close the app before upgrading. Install the new desktop package over the old one. On Linux, run the new archive's `install.sh` again. Replace files in the extension's permanent folder, reload it at `chrome://extensions`, and refresh open Udemy tabs. Keep the extension path unchanged to retain its settings.
+Close the app before upgrading. Install the new desktop package over the old one. On Linux, run the new binary with `--install` again. Replace files in the extension's permanent folder, reload it at `chrome://extensions`, and refresh open Udemy tabs. Keep the extension path unchanged to retain its settings and notes. Renaming the product to StudyDock does not move existing desktop export directories.
 
 Uninstall Windows through Installed apps; remove the app from Applications on macOS. On Linux, remove the `app` subfolder from the data directory and `com.himanm.UdemyStudyTools.desktop` from your desktop and `~/.local/share/applications` (or the corresponding XDG location). Your export folders and preferences are kept separately; delete those only if you intend to remove your study data.
 
@@ -115,7 +145,7 @@ Uninstall Windows through Installed apps; remove the app from Applications on ma
 
 ## Privacy
 
-No analytics, external AI service, passwords, or cookies are sent by this tool. The extension reads only the Udemy pages it needs, tab-group names, and its own settings. It sends exports to a loopback-only Python connector using extension-origin checks and a per-session token. This blocks ordinary web-page access; it is not a security boundary against other programs already running on your computer. Exported files contain the course questions, your answers, and source URLs—keep them private as appropriate.
+No analytics, external AI service, passwords, or cookies are sent by this tool. The extension reads the Udemy pages it needs, tab-group names, and its own settings. Notes and a short question preview stay in extension storage. Browser exports download locally. The optional desktop connection sends exports to a loopback-only connector using extension-origin checks and a per-session token. This blocks ordinary web-page access; it is not a security boundary against other programs already running on your computer. Exported files contain course questions, your answers, notes, and source URLs—keep them private as appropriate.
 
 ## Run from source
 
@@ -136,9 +166,10 @@ python -m pip install -r requirements-dev.txt
 python -m playwright install chrome
 python test_extractor.py
 python test_review.py
+python test_notebook.py
 ```
 
-Linux headless checks need `xvfb-run -a python test_extractor.py`. Run `python test_review.py --screenshots` to write synthetic previews under `.dev-previews/`. The tests cover exports/authentication, desktop preferences/platform paths, review navigation, image viewer, native-theme contrast/restoration, connection states, and mobile/reduced-motion behavior. Screenshots in this README contain synthetic fixtures, not personal exports.
+Linux headless checks need `xvfb-run -a python test_extractor.py`. Pass `--screenshots` to the review or notebook tests to write synthetic previews under `.dev-previews/`. Tests cover exports/authentication, desktop preferences/platform paths, review navigation, image viewer, native-theme contrast/restoration, notes and save failures, browser downloads, settings, connection states, and mobile/reduced-motion behavior. Screenshots contain synthetic fixtures, not personal exports.
 
 - **Checks workflow:** tests Windows, Linux, macOS Apple Silicon, and macOS Intel on pushes/PRs.
 - **Release workflow:** on a `v*` tag, runs the checks, verifies the tag matches `extension/manifest.json`, builds on each target OS, smoke-tests the bundles, validates Linux installation/launchers and the Windows installer, then publishes packages and SHA-256 checksums only if every job succeeds.
@@ -150,3 +181,5 @@ To release, update the manifest version and `RELEASE_NOTES.md`, commit, then pus
 ## Credits and license
 
 MIT, copyright 2026 HimanM. Full-height behavior derives from [Fuck-Udemy-Exam-UI](https://github.com/HimanM/Fuck-Udemy-Exam-UI); its MIT notice remains in `extension/LICENSE-fullheight.txt`. Google [Material Design Icons](https://github.com/google/material-design-icons) are bundled under Apache 2.0, with the license in `extension/icons/LICENSE-material-icons.txt`. This tool is not affiliated with Udemy.
+
+The StudyDock app icon was created with the built-in image-generation tool. Its source artwork and generation prompt are documented in [Brand artwork](docs/brand.md).

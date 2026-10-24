@@ -48,7 +48,7 @@ def desktop_entry(executable, icon):
     icon = str(icon).replace("\\", "\\\\")
     if any(char in str(executable) + icon for char in "\r\n"):
         raise ValueError("Installation paths cannot contain newlines.")
-    return ("[Desktop Entry]\nType=Application\nName=Udemy Study Tools\n"
+    return ("[Desktop Entry]\nType=Application\nName=StudyDock\n"
             f'Exec="{command}"\nIcon={icon}\nTerminal=false\nCategories=Education;Utility;\n'
             "StartupWMClass=UdemyStudyTools\nComment=Review and export completed Udemy practice tests\n")
 
@@ -56,16 +56,18 @@ def desktop_entry(executable, icon):
 def install_linux():
     if sys.platform != "linux" or not getattr(sys, "frozen", False):
         raise RuntimeError("Use --install with the packaged Linux application.")
-    source = Path(sys.executable).resolve().parent
+    source = Path(sys.executable).resolve()
     destination = user_data_dir() / "app"
-    if destination.resolve() != source:
-        if destination.resolve().is_relative_to(source):
-            raise ValueError("The installation directory cannot be inside the downloaded app.")
-        shutil.copytree(source, destination, dirs_exist_ok=True, symlinks=True)
+    destination.mkdir(parents=True, exist_ok=True)
+    executable = destination / "StudyDock"
+    if executable.resolve() != source:
+        shutil.copy2(source, executable)
+    icon = destination / "studydock.png"
+    shutil.copy2(ROOT / "extension/icons/icon-256.png", icon)
     applications = Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local/share")) / "applications"
     applications.mkdir(parents=True, exist_ok=True)
     launcher = applications / "com.himanm.UdemyStudyTools.desktop"
-    launcher.write_text(desktop_entry(destination / "UdemyStudyTools", destination / "_internal/extension/icons/icon-256.png"), encoding="utf-8")
+    launcher.write_text(desktop_entry(executable, icon), encoding="utf-8")
     launcher.chmod(0o755)
     desktop = Path.home() / "Desktop"
     if shutil.which("xdg-user-dir"):
@@ -107,10 +109,15 @@ def prepare_export(data, full=True):
     for question in data["questions"]:
         if not isinstance(question, dict) or not question.get("question") or not question.get("options"):
             raise ValueError("An incomplete question was found. No files were written for this tab.")
-        fields = ["number", "question", "selected_answers", "marked_for_review", "tags", "domain"]
+        fields = ["number", "question", "selected_answers", "marked_for_review", "tags", "domain", "notes"]
         if full:
             fields += ["correct_answers", "is_correct", "status", "explanation"]
         item = {key: copy.deepcopy(question[key]) for key in fields if key in question}
+        if "notes" in item:
+            note = item["notes"]
+            if not isinstance(note, dict) or not isinstance(note.get("text"), str) or len(note["text"]) > 60000:
+                raise ValueError("Invalid question notes. No files were written for this tab.")
+            item["notes"] = {key: note[key] for key in ("text", "updated_at") if key in note}
         item["options"] = [{key: option[key] for key in
                             (["label", "text", "selected", "correct", "explanation"] if full else
                              ["label", "text", "selected"]) if key in option}
@@ -154,6 +161,8 @@ def markdown(data):
                       q.get("explanation") or "Not provided by this page."]
         if q.get("domain"):
             lines += ["", f"Domain: {q['domain']}"]
+        if q.get("notes", {}).get("text"):
+            lines += ["", "### Your notes", "", q["notes"]["text"]]
         lines += ["", "---", ""]
     return "\n".join(lines)
 
@@ -301,7 +310,7 @@ class App(tk.Tk):
         except (OSError, ValueError):
             pass
         self.dark = self.preferences.get("darkMode", True) is True
-        self.title("Udemy Study Tools — Exporter")
+        self.title("StudyDock — Exporter")
         self.brand_icon = tk.PhotoImage(file=ROOT / "extension/icons/icon-48.png")
         self.iconphoto(True, tk.PhotoImage(file=ROOT / "extension/icons/icon-256.png"), self.brand_icon)
         if os.name == "nt":
@@ -328,7 +337,7 @@ class App(tk.Tk):
         ttk.Label(header, image=self.brand_icon).pack(side="left", padx=(0, 12))
         brand = ttk.Frame(header)
         brand.pack(side="left")
-        ttk.Label(brand, text="Study exporter", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(brand, text="StudyDock", style="Title.TLabel").pack(anchor="w")
         ttk.Label(brand, text="Completed tests, ready for your notes.", style="Muted.TLabel").pack(anchor="w")
         self.theme_button = ttk.Button(header, command=self.toggle_theme)
         self.theme_button.pack(side="right")
@@ -508,12 +517,20 @@ class App(tk.Tk):
             messagebox.showerror("Output folder", str(error), parent=self)
 
     def setup_help(self):
+        extension = ROOT / "extension"
+        if sys.platform == "linux" and getattr(sys, "frozen", False):
+            extension = user_data_dir() / "extension"
+            try:
+                shutil.copytree(ROOT / "extension", extension, dirs_exist_ok=True)
+            except OSError as error:
+                messagebox.showerror("Chrome setup", str(error), parent=self)
+                return
         self.clipboard_clear()
-        self.clipboard_append(str(ROOT / "extension"))
+        self.clipboard_append(str(extension))
         messagebox.showinfo("One-time Chrome setup", "1. Open chrome://extensions in Chrome.\n"
             "2. Turn on Developer mode.\n3. Click Load unpacked and select this folder:\n\n"
-            f"{ROOT / 'extension'}\n\n(The folder path is copied to your clipboard.)\n\n"
-            "4. Keep the Study Extractor connection tab open.\n"
+            f"{extension}\n\n(The folder path is copied to your clipboard.)\n\n"
+            "4. Keep the StudyDock connection tab open.\n"
             "Next time, open it from Chrome's Extensions menu.\n\n"
             "Use completed English-language Udemy practice tests; your answers are never changed.", parent=self)
 
@@ -548,7 +565,7 @@ def main():
         root.withdraw()
         if os.name == "nt":
             root.iconbitmap(default=str(ROOT / "extension/icons/study.ico"))
-        messagebox.showerror("Study Extractor", f"Cannot start the local connector on port {PORT}.\n"
+        messagebox.showerror("StudyDock", f"Cannot start the local connector on port {PORT}.\n"
                              f"The app may already be open.\n\n{error}")
         root.destroy()
         return

@@ -116,6 +116,14 @@
     const warnings = [];
     if (questions.some(q => !q.explanation)) warnings.push("Some questions have no overall explanation on this page.");
     if (questions.some(q => JSON.stringify(q).includes("!["))) warnings.push("Diagrams are preserved as image URLs. Include the images when asking an LLM about image-based questions.");
+    if (globalThis.StudyDockNotes) {
+      const nodes = all(wrapper, review);
+      for (let index = 0; index < questions.length; index++) {
+        const info = await StudyDockNotes.context(nodes[index].querySelector('[id="question-prompt"]'), questions[index].number);
+        const note = await StudyDockNotes.read(info.key);
+        if (note?.text?.trim()) questions[index].notes = {text:note.text, updated_at:note.updated_at};
+      }
+    }
     return {title: text(document.querySelector('[class*="results-header--title--"]')) || document.title,
       url: location.href, quiz_id: location.pathname.match(/\/quiz\/(\d+)/)?.[1],
       attempt: location.pathname.match(/\/result\/(\d+)/)?.[1] || new URL(location.href).searchParams.get("expanded"),

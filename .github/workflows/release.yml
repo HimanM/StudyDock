@@ -44,10 +44,11 @@ jobs:
         run: |
           sudo apt-get install -y desktop-file-utils
           export XDG_DATA_HOME="$(mktemp -d)"
-          dist/UdemyStudyTools/UdemyStudyTools --install
+          dist/StudyDock --install
           desktop-file-validate "$XDG_DATA_HOME/applications/com.himanm.UdemyStudyTools.desktop"
           test -f "$HOME/Desktop/com.himanm.UdemyStudyTools.desktop"
-          xvfb-run -a "$XDG_DATA_HOME/udemy-study-tools/app/UdemyStudyTools" --smoke-test
+          test -f "$XDG_DATA_HOME/udemy-study-tools/app/studydock.png"
+          xvfb-run -a "$XDG_DATA_HOME/udemy-study-tools/app/StudyDock" --smoke-test
       - name: Check Windows installer
         if: runner.os == 'Windows'
         shell: pwsh
@@ -56,7 +57,7 @@ jobs:
           $installPath = Join-Path $env:RUNNER_TEMP 'study-install'
           $setup = Start-Process -FilePath $installer.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', ('/DIR="' + $installPath + '"') -WindowStyle Hidden -Wait -PassThru
           if ($setup.ExitCode -ne 0) { throw 'Installer failed' }
-          $smoke = Start-Process -FilePath (Join-Path $installPath 'UdemyStudyTools.exe') -ArgumentList '--smoke-test' -WindowStyle Hidden -Wait -PassThru
+          $smoke = Start-Process -FilePath (Join-Path $installPath 'StudyDock.exe') -ArgumentList '--smoke-test' -WindowStyle Hidden -Wait -PassThru
           if ($smoke.ExitCode -ne 0) { throw 'Installed app smoke test failed' }
       - uses: actions/upload-artifact@v4
         with:
@@ -66,7 +67,7 @@ jobs:
             dist/*-portable.zip
             dist/*-chrome.zip
             dist/*.dmg
-            dist/*.tar.gz
+            dist/*.bin
             dist/SHA256SUMS-*.txt
           if-no-files-found: error
           retention-days: 14
@@ -85,4 +86,4 @@ jobs:
       - name: Publish tested packages
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --title "Udemy Study Tools ${GITHUB_REF_NAME}" --notes-file RELEASE_NOTES.md
+        run: gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --title "StudyDock ${GITHUB_REF_NAME}" --notes-file RELEASE_NOTES.md
