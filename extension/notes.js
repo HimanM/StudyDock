@@ -91,7 +91,7 @@
     theme();
   }
   const style = node('style'); style.textContent = `
-    .studydock-note-button{display:inline-flex;align-items:center;gap:8px;margin:12px 0;padding:8px 14px;border:0;border-radius:20px;background:#dce9fc;color:#285ea8;font:500 14px system-ui;cursor:pointer}
+    .studydock-note-button{display:inline-flex;align-items:center;align-self:flex-start;justify-self:start;width:max-content!important;max-width:100%;gap:8px;margin:12px 0;padding:8px 14px;border:0;border-radius:20px;background:#dce9fc;color:#285ea8;font:500 14px system-ui;cursor:pointer}
     .studydock-note-button[hidden]{display:none!important}html[data-study-dark] .studydock-note-button{background:#2a405d!important;color:#c1d8fa!important}
     .studydock-note-button:focus-visible{outline:2px solid #81aeee;outline-offset:3px}
   `; document.head.append(style);

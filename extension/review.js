@@ -510,7 +510,16 @@
       });
       themedNodes = new WeakSet(); return;
     }
-    const rgb = value => value.match(/^rgba?\(([^)]+)\)/)?.[1].match(/[\d.]+/g)?.map(Number);
+    const canvas = new OffscreenCanvas(1,1), context = canvas.getContext('2d',{willReadFrequently:true}), parsed = new Map();
+    const rgb = value => {
+      if (!parsed.has(value)) {
+        // Udemy also uses oklch()/color-mix(); let Chrome convert CSS colors to sRGB.
+        context.clearRect(0,0,1,1); context.fillStyle = value; context.fillRect(0,0,1,1);
+        const [r,g,b,a] = context.getImageData(0,0,1,1).data;
+        parsed.set(value,[r,g,b,a/255]);
+      }
+      return parsed.get(value);
+    };
     const pale = color => color && (color[3] ?? 1) >= .8 && Math.max(...color.slice(0,3)) - Math.min(...color.slice(0,3)) < 45 && color.slice(0,3).reduce((a,b) => a+b)/3 > 185;
     const luminance = color => color.slice(0,3).map(value => value/255).map(value => value <= .04045 ? value/12.92 : ((value+.055)/1.055)**2.4).reduce((sum,value,index) => sum + value * [.2126,.7152,.0722][index],0);
     const contrast = (a,b) => (Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);

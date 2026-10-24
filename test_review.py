@@ -333,6 +333,17 @@ def main():
         }''')
         page.locator('#contrast-samples p').evaluate("node=>node.style.color='#393939'")
         page.wait_for_function("getComputedStyle(document.querySelector('#contrast-samples p')).color === 'rgb(238, 241, 246)'")
+        # Udemy's modern color tokens serialize as oklch()/color(), not rgb().
+        page.evaluate('''() => {
+          const card=document.createElement('div');card.id='modern-colors';
+          card.style.cssText='background:oklch(100% 0 0);color:oklch(30% 0 0);padding:24px';
+          card.innerHTML='<h2 style="color:color-mix(in srgb, #eee 90%, white)">Modern white card</h2><p>Modern dark ink</p><div id="modern-chart" style="background:oklch(90% .1 140);color:oklch(20% 0 0)">Colored chart</div>';
+          document.body.prepend(card);
+        }''')
+        page.wait_for_function("document.querySelector('#modern-colors').hasAttribute('data-study-native-surface')")
+        assert page.locator('#modern-colors').evaluate('node=>getComputedStyle(node).backgroundColor') == 'rgb(32, 37, 43)'
+        assert page.locator('#modern-colors p').evaluate('node=>getComputedStyle(node).color') == 'rgb(238, 241, 246)'
+        assert page.locator('#modern-chart').get_attribute('data-study-native-surface') is None
         screenshot(page,'native-contrast.png')
         page.evaluate("chrome.storage.local.set({darkMode:false})")
         assert page.locator('#native-card').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgb(255, 255, 255)'
