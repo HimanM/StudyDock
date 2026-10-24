@@ -128,7 +128,7 @@ def main():
         viewer = root.get_by_role('dialog', name='Image viewer')
         viewer.wait_for()
         page.wait_for_function("document.querySelector('#udemy-study-review').shadowRoot.querySelector('.viewer-image').naturalWidth === 960")
-        assert viewer.locator('.viewer-image').is_visible()
+        viewer.locator('.viewer-image').wait_for(state='visible')
         assert viewer.get_by_role('button', name='Zoom out').is_disabled()
         page.keyboard.press('Tab')
         assert root.evaluate("n=>!!n.shadowRoot.activeElement.closest('.viewer')")
