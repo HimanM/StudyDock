@@ -22,6 +22,10 @@
     html[data-study-dark] {color-scheme:dark}
     html[data-study-dark] body {background:#171b20!important;color:#e0e4eb!important}
     html[data-study-dark] [data-study-native-surface] {background-color:#20252b!important;border-color:#3c4550!important}
+    html[data-study-dark] [data-study-native-answer=correct],html[data-study-dark] [data-study-native-answer=correct] [data-study-native-surface] {background-color:#25382f!important}
+    html[data-study-dark] [data-study-native-answer=incorrect],html[data-study-dark] [data-study-native-answer=incorrect] [data-study-native-surface] {background-color:#3b2b30!important}
+    html[data-study-dark] [data-study-native-answer=correct] {border-color:#91d6ab!important}
+    html[data-study-dark] [data-study-native-answer=incorrect] {border-color:#f3a5a9!important}
     html[data-study-dark] :is(label:has(input:checked),[role=radio][aria-checked=true],[role=checkbox][aria-checked=true],[data-purpose=answer][data-checked=true]) {background-color:#2a405d!important;border-color:#adcaff!important;color:#eef1f6!important}
     html[data-study-dark] [data-study-native-ink] {color:#eef1f6!important}
     html[data-study-dark] [data-study-native-ink=dark] {color:#20252c!important}
@@ -69,6 +73,9 @@
     .splitter:hover:after,.splitter:focus:after {background:var(--accent)}
     .left .question {grid-column:3}.left .explanation {grid-column:1}
     .panes.closed {grid-template-columns:minmax(0,1fr)}.closed .question {grid-column:1}.closed .explanation,.closed .splitter {display:none}
+    :host([data-notes-docked]) .panes{grid-template-columns:minmax(0,1fr)}
+    :host([data-notes-docked]) .question{grid-column:1}
+    :host([data-notes-docked]) .explanation,:host([data-notes-docked]) .splitter{display:none}
     .panel {min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--surface);border-radius:20px;
       scrollbar-width:thin;scrollbar-color:var(--line) transparent;scroll-padding:28px}
     .reading {max-width:78ch;margin:auto;padding:28px clamp(24px,3vw,48px) 36px}
@@ -381,13 +388,18 @@
       const node = iconButton(label, name, action); node.dataset.control = key;
       if (pressed != null) node.setAttribute("aria-pressed", String(pressed)); controls.append(node); return node;
     };
-    const explain = control(settings.explanationOpen ? "Hide explanation" : "Show explanation", "panel", "explanation", () => { save({explanationOpen: !settings.explanationOpen}); render(); }, settings.explanationOpen);
+    const explain = control(settings.explanationOpen ? "Hide explanation" : "Show explanation", "panel", "explanation", () => {
+      if (globalThis.StudyDockNoteUI?.docked()) { StudyDockNoteUI.close(); save({explanationOpen:true}); }
+      else save({explanationOpen: !settings.explanationOpen});
+      render();
+    }, settings.explanationOpen);
     explain.className = "label-button"; explain.append(el("span", "", "Explanation"));
     if (settings.notesEnabled && globalThis.StudyDockNoteUI && matchingIndexes().length) {
       const notes = button("Notes", () => {
         const question = questions[active];
         void StudyDockNoteUI.open(question.node.querySelector('[id="question-prompt"]'), question.number, notes);
       }, "label-button");
+      notes.dataset.control = 'notes';
       controls.append(notes);
       const question = questions[active];
       StudyDockNoteUI.follow(question.node.querySelector('[id="question-prompt"]'), question.number, notes);
@@ -486,6 +498,7 @@
       node.setAttribute("aria-label", label); node.title = label; node.setAttribute("aria-current", String(i === active && indexes.length > 0));
       if (question.marked) { const dot = el("span", "dot"); dot.setAttribute("aria-hidden", "true"); node.append(dot); } numbers.append(node);
     }); trayInner.append(numbers); tray.append(trayInner); bottom.append(tray); workspace.append(bottom); updateTray();
+    globalThis.StudyDockNoteUI?.layout();
     all(".rich img", shadow).forEach((node, i) => { node.dataset.control = `image-${i}`; });
     if (!sameQuestion) all(".reading", shadow).forEach(node => motion(node, [{opacity: .3, transform: "translateY(4px)"}, {opacity: 1, transform: "translateY(0)"}]));
     else if (layoutChanged) motion(settings.explanationOpen ? explanation : qPanel, [{opacity: .4}, {opacity: 1}]);
@@ -513,10 +526,20 @@
   }
   function themeNativePage() {
     if (!settings.darkMode) {
-      all("[data-study-native-surface],[data-study-native-ink]").forEach(node => {
-        node.removeAttribute("data-study-native-surface"); node.removeAttribute("data-study-native-ink");
+      all("[data-study-native-surface],[data-study-native-ink],[data-study-native-answer]").forEach(node => {
+        node.removeAttribute("data-study-native-surface"); node.removeAttribute("data-study-native-ink"); node.removeAttribute('data-study-native-answer');
       });
       themedNodes = new WeakSet(); dirtyThemeNodes.clear(); return;
+    }
+    const answerLabel = '[data-purpose="answer-result-header-user-label"]';
+    const answers = new Set([...all('[data-study-native-answer]'),...all(answerLabel).map(label =>
+      label.closest('[class*="result-pane--answer-result-pane--"]') || label.closest('[data-purpose="answer"]')).filter(Boolean)]);
+    for (const answer of answers) {
+      const labels = all(answerLabel,answer).map(label => text(label));
+      const state = labels.some(label => /\bincorrect\b/i.test(label)) ? 'incorrect' : labels.some(label => /\bcorrect\b/i.test(label)) ? 'correct' : null;
+      if (answer.getAttribute('data-study-native-answer') === state) continue;
+      if (state) answer.setAttribute('data-study-native-answer',state); else answer.removeAttribute('data-study-native-answer');
+      for (const node of [answer,...all('*',answer)]) dirtyThemeNodes.add(node);
     }
     // Keep the old theme until replacement colors can be measured and applied before paint.
     for (const node of dirtyThemeNodes) {
@@ -534,6 +557,12 @@
       return parsed.get(value);
     };
     const pale = color => color && (color[3] ?? 1) >= .8 && Math.max(...color.slice(0,3)) - Math.min(...color.slice(0,3)) < 45 && color.slice(0,3).reduce((a,b) => a+b)/3 > 185;
+    const themeSurface = (node,color) => pale(color) && !(Math.max(...color.slice(0,3))-Math.min(...color.slice(0,3)) > 6 &&
+      node.closest('[role="progressbar"],progress,meter,[class*="progress"],[class*="chart"],[data-purpose*="progress"],[data-purpose*="chart"]'));
+    const darkSurface = node => {
+      const state = node.closest('[data-study-native-answer]')?.getAttribute('data-study-native-answer');
+      return state === 'correct' ? [37,56,47] : state === 'incorrect' ? [59,43,48] : [32,37,43];
+    };
     const luminance = color => color.slice(0,3).map(value => value/255).map(value => value <= .04045 ? value/12.92 : ((value+.055)/1.055)**2.4).reduce((sum,value,index) => sum + value * [.2126,.7152,.0722][index],0);
     const contrast = (a,b) => (Math.max(luminance(a),luminance(b))+.05)/(Math.min(luminance(a),luminance(b))+.05);
     const nodes = all('body *').filter(node => !themedNodes.has(node) && node.namespaceURI === 'http://www.w3.org/1999/xhtml' &&
@@ -549,13 +578,13 @@
     const backgroundFor = node => {
       for (let parent=node; parent; parent=parent.parentElement) {
         const color = read(parent).background;
-        if (pale(color) || parent.hasAttribute('data-study-native-surface')) return [32,37,43];
+        if (themeSurface(parent,color) || parent.hasAttribute('data-study-native-surface')) return darkSurface(parent);
         if (color && (color[3] ?? 1) >= .8) return color;
       }
       return [23,27,32];
     };
     // Set surfaces first, then repair inherited text from parent to child, including colored charts.
-    const updates = nodes.map(node => ({node,pale:pale(read(node).background),surface:backgroundFor(node)}));
+    const updates = nodes.map(node => ({node,pale:themeSurface(node,read(node).background),surface:backgroundFor(node)}));
     for (const update of updates) {
       themedNodes.add(update.node);
       if (update.pale) update.node.setAttribute('data-study-native-surface','');

@@ -84,7 +84,7 @@ def main():
         exam_html = page.locator('[class*="question-result-pane-wrapper"]').first.evaluate('''node=>{
           const copy=node.cloneNode(true);copy.className='quiz-view--container--fixture';
           copy.querySelector('[class*=pane-title]').remove();copy.querySelector('.studydock-note-button').remove();
-          return '<h2>Question 1 of 5</h2>'+copy.outerHTML;
+          return '<main data-purpose="curriculum-item-viewer-content"><header><span hidden>99/100</span><span id="counter"><span>1</span> / <span>5</span></span></header>'+copy.outerHTML+'</main>';
         }''')
         exam = browser.new_page()
         exam.route('**/*',lambda route:route.fulfill(body=exam_html,content_type='text/html'))
@@ -94,6 +94,53 @@ def main():
         exam.get_by_role('button',name='Notes',exact=True).click()
         exam.locator('#studydock-notes').get_by_role('heading',name='Question 1 · Notes',exact=True).wait_for()
         assert exam.locator('#studydock-notes textarea').input_value() == 'A revised note'
+        exam_panel=exam.locator('#studydock-notes')
+        assert exam_panel.locator('input').count()==0
+        exam.evaluate('''() => {
+          const sidebar=document.createElement('aside');sidebar.dataset.purpose='sidebar';sidebar.textContent='Course content and AI assistant';document.body.append(sidebar);
+          const mark=document.createElement('button');mark.textContent='Mark for review';mark.onclick=()=>{mark.textContent=mark.textContent==='Mark for review'?'Marked for review':'Mark for review'};
+          document.querySelector('[class*=quiz-view--container]').prepend(mark);
+        }''')
+        exam.wait_for_function("document.querySelector('[data-study-mark-control]')?.nextElementSibling?.classList.contains('studydock-note-button')")
+        exam.get_by_role('button',name='Mark for review',exact=True).click()
+        exam.get_by_role('button',name='Marked for review',exact=True).wait_for()
+        exam_panel.get_by_label('View',exact=True).select_option('docked')
+        exam.wait_for_function("document.documentElement.hasAttribute('data-study-notes-docked')")
+        assert exam.locator('[data-purpose=sidebar]').is_hidden()
+        assert exam.locator('main').bounding_box()['width'] < 950
+        exam_panel.get_by_role('button',name='Course sidebar',exact=True).click()
+        assert exam.locator('[data-purpose=sidebar]').is_visible()
+        exam.get_by_role('button',name='Notes',exact=True).click()
+        assert exam_panel.get_attribute('data-docked') is not None
+        exam_panel.get_by_label('View',exact=True).select_option('floating')
+        exam.wait_for_function("!document.documentElement.hasAttribute('data-study-notes-docked')")
+        original_prompt=exam.locator('#question-prompt').inner_html()
+        next_prompt=page.locator('[id="question-prompt"]').nth(1).inner_html()
+        exam_panel.locator('textarea').fill('Exam question one reminder')
+        exam_panel.get_by_role('button',name='Minimize notes').click()
+        # Udemy can reuse the prompt element and update a text node in its counter.
+        exam.evaluate('''html=>{
+          document.querySelector('#counter span').firstChild.data='2';
+          document.querySelector('#question-prompt').innerHTML=html;
+        }''',next_prompt)
+        exam_panel.get_by_role('heading',name='Question 2 · Notes',exact=True).wait_for()
+        assert exam_panel.locator('textarea').is_hidden()
+        exam_panel.get_by_role('button',name='Expand notes').click()
+        assert exam_panel.locator('textarea').input_value()==''
+        exam_panel.locator('textarea').fill('Exam question two reminder')
+        exam.evaluate('''html=>{
+          document.querySelector('#counter span').firstChild.data='1';
+          document.querySelector('#question-prompt').innerHTML=html;
+        }''',original_prompt)
+        exam_panel.get_by_role('heading',name='Question 1 · Notes',exact=True).wait_for()
+        assert exam_panel.locator('textarea').input_value()=='Exam question one reminder'
+        stored=exam.evaluate('StudyDockNotes.all()')
+        assert {(item['question_number'],item['text']) for item in stored}=={(1,'Exam question one reminder'),(2,'Exam question two reminder')}
+        exam.locator('#counter').evaluate("node=>node.textContent='Question 3 of 5'")
+        exam_panel.get_by_role('heading',name='Question 3 · Notes',exact=True).wait_for()
+        exam.locator('#counter').evaluate("node=>node.textContent='0 / 5'")
+        exam_panel.get_by_text('Question number unavailable',exact=False).wait_for()
+        assert exam_panel.locator('input').count()==0
         # Focused notes remain visible and typing does not trigger review shortcuts.
         page.evaluate("chrome.storage.local.set({notesEnabled:true,focusReview:true,darkMode:true})")
         inject(page,'review.js')
@@ -103,6 +150,21 @@ def main():
         assert panel.is_visible() and review.locator('.explanation').is_visible()
         assert panel.locator('textarea').evaluate("node=>getComputedStyle(node).outlineStyle==='none' && getComputedStyle(node).borderTopWidth==='2px'")
         screenshot(page,'review-with-notes.png')
+        panel.get_by_label('View',exact=True).select_option('docked')
+        page.wait_for_function("document.querySelector('#udemy-study-review').hasAttribute('data-notes-docked')")
+        assert review.locator('.explanation').is_hidden()
+        assert review.locator('.question').bounding_box()['x'] + review.locator('.question').bounding_box()['width'] < panel.bounding_box()['x']
+        screenshot(page,'review-notes-docked.png')
+        review.get_by_role('button',name='Show explanation',exact=True).click()
+        assert panel.is_hidden() and review.locator('.explanation').is_visible()
+        review.get_by_role('button',name='Notes',exact=True).click()
+        page.set_viewport_size({'width':800,'height':700})
+        assert panel.get_attribute('data-docked') is None
+        assert panel.locator('textarea').input_value() == 'Explanation remains open while I type e.'
+        page.set_viewport_size({'width':1280,'height':900})
+        page.wait_for_function("document.querySelector('#studydock-notes').hasAttribute('data-docked')")
+        panel.get_by_label('View',exact=True).select_option('floating')
+        page.wait_for_function("!document.documentElement.hasAttribute('data-study-notes-docked')")
         panel.get_by_role('button',name='Minimize notes',exact=True).click()
         assert panel.locator('textarea').is_hidden()
         review.get_by_role('button',name='Next question',exact=True).click()

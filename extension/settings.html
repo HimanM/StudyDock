@@ -1,9 +1,10 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>StudyDock settings</title><link rel="icon" href="icons/icon-32.png"><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="pages.css"></head><body>
+<title>StudyDock settings</title><link rel="icon" href="icons/studydock-favicon.png" sizes="32x32"><link rel="stylesheet" href="theme.css"><link rel="stylesheet" href="pages.css"></head><body>
 <main><header><div class="brand"><img src="icons/icon-48.png" width="40" height="40" alt=""><div><h1>Settings</h1><p>Make StudyDock fit the way you study.</p></div></div><a href="notebook.html">Notebook & exports</a></header>
 <section><h2>Workspace</h2>
 <label class="setting"><span>Desktop integration<small>Show the desktop exporter connection. Turn this off to use only browser tools.</small></span><input id="desktopIntegration" type="checkbox" role="switch"></label>
 <label class="setting"><span>Question notes<small>Show Notes on exam questions and in review. Existing notes stay saved when hidden.</small></span><input id="notesEnabled" type="checkbox" role="switch"></label>
+<label class="setting"><span>Notes view<small>The right panel replaces the course sidebar while open. In focused review, Notes and Explanation share the reading space. Narrow screens use a floating window.</small></span><select id="notesPlacement"><option value="floating">Floating window</option><option value="docked">Right panel</option></select></label>
 <label class="setting"><span>Focused review<small>Read one question and its explanation at a time.</small></span><input id="focusReview" type="checkbox" role="switch"></label>
 <label class="setting"><span>Dark mode<small>Use matching dark surfaces and readable text across Udemy and StudyDock.</small></span><input id="darkMode" type="checkbox" role="switch"></label>
 </section><section><h2>Exam controls</h2>

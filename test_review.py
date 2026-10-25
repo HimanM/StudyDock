@@ -214,7 +214,7 @@ def main():
         root.get_by_role("button", name="Original view", exact=True).click()
         assert root.count() == 0
         # Playwright's screenshot caret handling can leave an empty style on inputs.
-        restored = page.locator("main").evaluate("n=>{const copy=n.cloneNode(true);copy.querySelectorAll('[style=\"\"]').forEach(n=>n.removeAttribute('style'));copy.querySelectorAll('*').forEach(n=>{n.removeAttribute('data-study-native-surface');n.removeAttribute('data-study-native-ink')});return copy.outerHTML}")
+        restored = page.locator("main").evaluate("n=>{const copy=n.cloneNode(true);copy.querySelectorAll('[style=\"\"]').forEach(n=>n.removeAttribute('style'));copy.querySelectorAll('*').forEach(n=>{n.removeAttribute('data-study-native-surface');n.removeAttribute('data-study-native-ink');n.removeAttribute('data-study-native-answer')});return copy.outerHTML}")
         assert restored == original, '\n'.join(difflib.unified_diff(original.splitlines(), restored.splitlines()))[:2000]
         assert page.locator("main").is_visible()
         page.get_by_role("button", name="Focus review", exact=True).click()
@@ -344,6 +344,28 @@ def main():
         assert page.locator('#modern-colors').evaluate('node=>getComputedStyle(node).backgroundColor') == 'rgb(32, 37, 43)'
         assert page.locator('#modern-colors p').evaluate('node=>getComputedStyle(node).color') == 'rgb(238, 241, 246)'
         assert page.locator('#modern-chart').get_attribute('data-study-native-surface') is None
+        page.evaluate('''() => {
+          const chart=document.createElement('section'); chart.className='domain-progress-chart';
+          chart.style.background='white'; chart.id='pastel-progress';
+          chart.innerHTML='<div id="progress-correct" style="background:#e8f9f3;color:#006d6d;width:70%">70%</div><div id="progress-wrong" style="background:#ffeded;color:#a50000;width:30%">30%</div>';
+          document.body.prepend(chart);
+        }''')
+        page.wait_for_function("document.querySelector('#pastel-progress').hasAttribute('data-study-native-surface')")
+        assert page.locator('#pastel-progress').evaluate('node=>getComputedStyle(node).backgroundColor')=='rgb(32, 37, 43)'
+        assert page.locator('#progress-correct').evaluate('node=>getComputedStyle(node).backgroundColor')=='rgb(232, 249, 243)'
+        assert page.locator('#progress-wrong').evaluate('node=>getComputedStyle(node).backgroundColor')=='rgb(255, 237, 237)'
+        assert page.locator('#progress-correct').get_attribute('data-study-native-surface') is None
+        assert page.locator('#progress-wrong').get_attribute('data-study-native-surface') is None
+        page.evaluate('''() => {
+          const samples=document.createElement('section'); samples.id='answer-highlights';
+          samples.innerHTML='<div class="result-pane--answer-result-pane--fixture" style="background:white;border:1px solid pink"><span data-purpose="answer-result-header-user-label">Your answer is incorrect</span><pre style="background:white;color:#222">{ "example": "incorrect" }</pre></div><div class="result-pane--answer-result-pane--fixture" style="background:white;border:1px solid green"><span data-purpose="answer-result-header-user-label">Correct answer</span><pre style="background:white;color:#222">{ "example": "correct" }</pre></div>';
+          document.body.prepend(samples);
+        }''')
+        page.wait_for_function("document.querySelectorAll('#answer-highlights [data-study-native-answer]').length===2")
+        assert page.locator('#answer-highlights [data-study-native-answer=incorrect]').evaluate('node=>getComputedStyle(node).backgroundColor')=='rgb(59, 43, 48)'
+        assert page.locator('#answer-highlights [data-study-native-answer=correct]').evaluate('node=>getComputedStyle(node).backgroundColor')=='rgb(37, 56, 47)'
+        assert page.locator('#answer-highlights [data-study-native-answer=correct] pre').evaluate('node=>getComputedStyle(node).backgroundColor')=='rgb(37, 56, 47)'
+        assert page.locator('#answer-highlights [data-study-native-answer=incorrect] pre').evaluate('node=>getComputedStyle(node).color')=='rgb(238, 241, 246)'
         # Scroll-driven class/style changes must never expose the original white surface.
         assert page.locator('#modern-colors').evaluate('''async node => {
           for(let i=0;i<18;i++) {
@@ -385,6 +407,7 @@ def main():
         assert first_answer.evaluate("node=>getComputedStyle(node).backgroundColor") == 'rgb(246, 247, 249)'
         assert page.locator('#native-card').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgb(255, 255, 255)'
         assert page.locator('[data-study-native-surface],[data-study-native-ink]').count() == 0
+        assert page.locator('[data-study-native-answer]').count()==0
 
         popup = browser.new_page(viewport={'width': 350, 'height': 660})
         popup.on('pageerror', lambda error: errors.append(str(error)))

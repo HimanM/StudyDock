@@ -65,6 +65,8 @@ Since the repository is private, the script reads `GH_TOKEN` or `GITHUB_TOKEN`, 
 
 The extension is installed locally; it is not published to the Chrome Web Store. Your existing Udemy login stays in Chrome. The desktop app's **Chrome setup** button can also show/copy the bundled extension path.
 
+The [static product website](website/README.md) includes a working study demo, OS-aware desktop downloads and the [privacy policy](docs/PRIVACY.md). Public hosting has not been enabled. Chrome Web Store submission materials are maintained locally and are intentionally excluded from this repository.
+
 ## Review controls
 
 | Control | Action |
@@ -105,7 +107,9 @@ The lower half of this page lists saved notes. Filter by test and download notes
 
 ### Question notes
 
-Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. Use **Minimize notes** to keep a compact question/status bar, or **Expand notes** to return to the larger, resizable writing area. In focused review, notes follow the selected question even when minimized, after saving the previous draft. If saving fails, the editor keeps that draft and its question label until you retry. Close it with Close or Escape. If Udemy's question number cannot be detected, you can enter it yourself.
+Choose **View → Right panel** inside Notes, or set **Notes view** in Settings, to dock the editor. Exams keep the question and Notes side by side; Udemy's course/AI sidebar is temporarily hidden. In focused review, Notes replaces Explanation until you switch back. Close or minimize Notes to restore the previous workspace. **Floating window** remains available, and screens narrower than 1100 px use it automatically. Your choice is saved and switching layouts keeps your draft. Where Udemy exposes its Mark for review button, Notes sits beside it; marking still uses Udemy's own control.
+
+Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. Use **Minimize notes** to keep a compact question/status bar, or **Expand notes** to return to the larger, resizable writing area. In exams and focused review, notes follow the selected question even when minimized, after saving the previous draft. Question numbers are read automatically from Udemy and cannot be edited. If a layout's counter cannot be identified, the panel says the number is unavailable instead of guessing; the note remains attached to the question's content. If saving fails, the editor keeps that draft and its question label until you retry. Close it with Close or Escape.
 
 Notes match normalized prompt text, question-image paths and available answer-choice text within the same quiz. Numbers and answer order do not identify a question. Notes therefore follow matching questions across attempts; changed question content or an unrecognized author/layout may prevent a match. Notes-only question numbers reflect the last saved source attempt. In full-test exports, notes appear under the current question number.
 

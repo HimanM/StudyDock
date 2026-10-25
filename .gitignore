@@ -14,3 +14,9 @@ build/
 review-*.png
 HANDOFF*.md
 .DS_Store
+# Local Chrome Web Store submission materials; intentionally not published to Git.
+docs/CHROME_WEB_STORE.md
+docs/STORE_LISTING.md
+docs/store-assets/
+tools/package_extension.py
+tools/store_assets.py
