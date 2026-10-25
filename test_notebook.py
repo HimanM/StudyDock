@@ -102,6 +102,8 @@ def main():
           document.querySelector('[class*=quiz-view--container]').prepend(mark);
         }''')
         exam.wait_for_function("document.querySelector('[data-study-mark-control]')?.nextElementSibling?.classList.contains('studydock-note-button')")
+        exam.locator('.studydock-note-button').evaluate('node=>node.remove()')
+        exam.get_by_role('button',name='Notes',exact=True).wait_for()
         exam.get_by_role('button',name='Mark for review',exact=True).click()
         exam.get_by_role('button',name='Marked for review',exact=True).wait_for()
         exam_panel.get_by_label('View',exact=True).select_option('docked')
@@ -141,6 +143,11 @@ def main():
         exam.locator('#counter').evaluate("node=>node.textContent='0 / 5'")
         exam_panel.get_by_text('Question number unavailable',exact=False).wait_for()
         assert exam_panel.locator('input').count()==0
+        exam_panel.get_by_label('View',exact=True).select_option('docked')
+        exam.wait_for_function("document.documentElement.hasAttribute('data-study-notes-docked')")
+        exam.evaluate("history.pushState({},'', '/course/test/learn/overview');document.querySelector('main').replaceChildren()")
+        exam_panel.wait_for(state='hidden')
+        assert exam.locator('[data-purpose=sidebar]').is_visible()
         # Focused notes remain visible and typing does not trigger review shortcuts.
         page.evaluate("chrome.storage.local.set({notesEnabled:true,focusReview:true,darkMode:true})")
         inject(page,'review.js')
@@ -159,6 +166,7 @@ def main():
         assert panel.is_hidden() and review.locator('.explanation').is_visible()
         review.get_by_role('button',name='Notes',exact=True).click()
         page.set_viewport_size({'width':800,'height':700})
+        page.wait_for_function("!document.querySelector('#studydock-notes').hasAttribute('data-docked')")
         assert panel.get_attribute('data-docked') is None
         assert panel.locator('textarea').input_value() == 'Explanation remains open while I type e.'
         page.set_viewport_size({'width':1280,'height':900})

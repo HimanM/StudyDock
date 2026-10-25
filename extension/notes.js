@@ -162,10 +162,11 @@
   function theme() { host?.toggleAttribute('data-dark', document.documentElement.hasAttribute('data-study-dark')); }
   function scan() {
     document.querySelectorAll('.studydock-note-button').forEach(button => button.hidden = !enabled);
+    if (!/\/learn\/(quiz|practice)\//.test(location.pathname)) { if (host) host.hidden = true; layout(); return; }
     if (!enabled) { if (host) host.hidden = true; layout(); return; }
     for (const prompt of document.querySelectorAll(promptSelector)) {
       let button = buttons.get(prompt) || prompt.nextElementSibling;
-      if (!button?.classList.contains('studydock-note-button')) {
+      if (!button?.isConnected || !button.classList.contains('studydock-note-button')) {
         button = node('button'); button.className = 'studydock-note-button'; button.type = 'button';
         button.innerHTML = noteIcon; button.append(document.createTextNode('Notes'));
         button.addEventListener('click', () => void open(prompt, questionNumber(prompt), button));
