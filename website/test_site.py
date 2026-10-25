@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import threading
+import zipfile
 from playwright.sync_api import sync_playwright
 
 ROOT=Path(__file__).resolve().parent
@@ -37,10 +38,18 @@ try:
         assert '\u2014' not in page.locator('body').inner_text()
         page.wait_for_function("document.documentElement.dataset.theme==='dark'")
         assert page.locator('a[href*="chromewebstore.google.com"]').count()==0
-        assert page.get_by_role('link',name='Download extension',exact=True).first.get_attribute('href')=='https://github.com/HimanM/Udemy-Study-Tools/archive/refs/heads/main.zip'
-        page.get_by_text('Install in Chrome from GitHub',exact=True).click()
+        extension_link=page.get_by_role('link',name='Download extension',exact=True).first
+        assert extension_link.get_attribute('href')==BASE+'/downloads/StudyDock-extension.zip'
+        with page.expect_download() as extension_download:
+            extension_link.click()
+        with zipfile.ZipFile(extension_download.value.path()) as archive:
+            expected={file.relative_to(ROOT.parent/'extension').as_posix() for file in (ROOT.parent/'extension').rglob('*') if file.is_file()}
+            assert set(archive.namelist())==expected
+            assert json.loads(archive.read('manifest.json'))['version']==json.loads((ROOT.parent/'extension/manifest.json').read_text())['version']
+            assert archive.read('notes.js')==(ROOT.parent/'extension/notes.js').read_bytes()
+        page.get_by_text('Install in Chrome',exact=True).click()
         assert 'Load unpacked' in page.locator('.extension-install').inner_text()
-        page.get_by_text('Install in Chrome from GitHub',exact=True).click()
+        page.get_by_text('Install in Chrome',exact=True).click()
         assert page.locator('link[rel=icon]').get_attribute('href').endswith('/favicon.png')
         for width in [1440,768,390]:
             page.set_viewport_size({'width':width,'height':1000 if width>400 else 844})

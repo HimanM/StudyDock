@@ -22,7 +22,7 @@ Review, notes and browser downloads need only the extension. Reviewing/exporting
 
 Download the matching package from [Releases](https://github.com/HimanM/Udemy-Study-Tools/releases). This repository is private: sign in with an account that has access. Packaged desktop apps include Python and Tk; you do not need to install Python separately.
 
-Release assets contain only the desktop application packages. The browser extension stays in this repository; there is no separate extension ZIP or checksum text-file download.
+Release assets contain only the desktop application packages. Download the [extension-only ZIP](https://udemystudytool.himanm.com/downloads/StudyDock-extension.zip) separately from the website. GitHub Actions packages the extension files for GitHub Pages; the ZIP contains no desktop application or repository source outside the extension.
 
 | System | Package | Installation |
 | --- | --- | --- |
@@ -58,9 +58,9 @@ Since the repository is private, the script reads `GH_TOKEN` or `GITHUB_TOKEN`, 
 
 ### Chrome companion
 
-1. Use the desktop app's **Chrome setup** button to find the bundled extension, or download this repository with **Code → Download ZIP** and extract it into a permanent folder.
+1. Download the [extension-only ZIP](https://udemystudytool.himanm.com/downloads/StudyDock-extension.zip) and extract it into a permanent folder, or use the desktop app's **Chrome setup** button to find its bundled extension.
 2. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**.
-3. Choose the `extension` folder. Pin **StudyDock** from Chrome's Extensions menu.
+3. Choose the extracted folder containing `manifest.json` (or the desktop app's `extension` folder). Pin **StudyDock** from Chrome's Extensions menu.
 4. Open a completed test attempt in Udemy and select **Review questions**.
 
 The extension is installed locally; it is not published to the Chrome Web Store. Your existing Udemy login stays in Chrome. The desktop app's **Chrome setup** button can also show/copy the bundled extension path.
@@ -107,7 +107,7 @@ The lower half of this page lists saved notes. Filter by test and download notes
 
 ### Question notes
 
-Choose **View → Right panel** inside Notes, or set **Notes view** in Settings, to dock the editor. Exams keep the question and Notes side by side; Udemy's course/AI sidebar is temporarily hidden. In focused review, Notes replaces Explanation until you switch back. Close or minimize Notes to restore the previous workspace. **Floating window** remains available, and screens narrower than 1100 px use it automatically. Your choice is saved and switching layouts keeps your draft. Where Udemy exposes its Mark for review button, Notes sits beside it; marking still uses Udemy's own control.
+Choose **View → Right panel** inside Notes, or set **Notes view** in Settings, to dock the editor. It becomes a column in the question layout, with aligned panel edges. Exams keep the question and Notes side by side; Udemy's course/AI sidebar is temporarily hidden. In focused review, Notes uses Explanation's space and resize divider until you switch back. Close or minimize Notes to restore the previous workspace. **Floating window** remains an independent overlay, and screens narrower than 1100 px use it automatically. Your choice is saved and switching layouts keeps your draft. Where Udemy exposes its Mark for review button, Notes sits beside it; marking still uses Udemy's own control.
 
 Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. Use **Minimize notes** to keep a compact question/status bar, or **Expand notes** to return to the larger, resizable writing area. In exams and focused review, notes follow the selected question even when minimized, after saving the previous draft. Question numbers are read automatically from Udemy and cannot be edited. If a layout's counter cannot be identified, the panel says the number is unavailable instead of guessing; the note remains attached to the question's content. If saving fails, the editor keeps that draft and its question label until you retry. Close it with Close or Escape.
 

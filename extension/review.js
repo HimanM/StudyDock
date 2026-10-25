@@ -73,9 +73,13 @@
     .splitter:hover:after,.splitter:focus:after {background:var(--accent)}
     .left .question {grid-column:3}.left .explanation {grid-column:1}
     .panes.closed {grid-template-columns:minmax(0,1fr)}.closed .question {grid-column:1}.closed .explanation,.closed .splitter {display:none}
-    :host([data-notes-docked]) .panes{grid-template-columns:minmax(0,1fr)}
+    :host([data-notes-docked]) .panes{grid-template-columns:minmax(0,1fr) 12px minmax(320px,var(--explanation-width,42%))}
     :host([data-notes-docked]) .question{grid-column:1}
-    :host([data-notes-docked]) .explanation,:host([data-notes-docked]) .splitter{display:none}
+    :host([data-notes-docked]) .explanation{display:none}
+    :host([data-notes-docked]) .splitter{display:block}
+    .notes-panel{display:none;grid-column:3;grid-row:1;min-height:0;min-width:0;overflow:auto;border-radius:20px;background:var(--surface)}
+    :host([data-notes-docked]) .notes-panel{display:block}
+    slot[name=notes]{display:block;height:100%}
     .panel {min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--surface);border-radius:20px;
       scrollbar-width:thin;scrollbar-color:var(--line) transparent;scroll-padding:28px}
     .reading {max-width:78ch;margin:auto;padding:28px clamp(24px,3vw,48px) 36px}
@@ -352,6 +356,7 @@
   }
   function closeReview() {
     closeImage(false);
+    globalThis.StudyDockNoteUI?.releaseDock();
     host?.remove(); host = shadow = null;
     document.documentElement.removeAttribute("data-study-focus");
     rememberedFocus?.focus?.({preventScroll: true}); rememberedFocus = null;
@@ -460,14 +465,14 @@
     const resize = value => { const width = Math.max(25, Math.min(65, value)); panes.style.setProperty("--explanation-width", `${width}%`); splitter.setAttribute("aria-valuenow", String(Math.round(width))); return width; };
     splitter.addEventListener("pointerdown", event => {
       if (event.button !== 0) return; event.preventDefault(); splitter.setPointerCapture(event.pointerId);
-      const move = event => { const rect = panes.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width * 100; resize(settings.explanationSide === "left" ? x : 100 - x); };
+      const move = event => { const rect = panes.getBoundingClientRect(); const x = (event.clientX - rect.left) / rect.width * 100; resize(settings.explanationSide === "left" && !host.hasAttribute('data-notes-docked') ? x : 100 - x); };
       const done = () => { splitter.removeEventListener("pointermove", move); splitter.removeEventListener("pointerup", done); splitter.removeEventListener("pointercancel", done); save({explanationWidth: Number(splitter.getAttribute("aria-valuenow"))}); };
       splitter.addEventListener("pointermove", move); splitter.addEventListener("pointerup", done); splitter.addEventListener("pointercancel", done);
     });
     splitter.addEventListener("keydown", event => {
       if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
       event.preventDefault(); event.stopPropagation();
-      const change = (event.key === "ArrowRight" ? 2 : -2) * (settings.explanationSide === "left" ? 1 : -1);
+      const change = (event.key === "ArrowRight" ? 2 : -2) * (settings.explanationSide === "left" && !host.hasAttribute('data-notes-docked') ? 1 : -1);
       const value = event.key === "Home" ? 25 : event.key === "End" ? 65 : Number(splitter.getAttribute("aria-valuenow")) + change;
       save({explanationWidth: resize(value)});
     }); panes.append(splitter);
@@ -478,7 +483,9 @@
       if (!option.reasons.length) return;
       const details = el("details"); details.append(el("summary", "", `Choice ${String.fromCharCode(65 + i)} explanation`));
       option.reasons.forEach(reason => details.append(copyRich(reason))); exp.append(details);
-    }); explanation.append(exp); panes.append(explanation); workspace.append(panes);
+    }); explanation.append(exp); panes.append(explanation);
+    const notesPanel = el('div','notes-panel'), notesSlot = el('slot'); notesSlot.name = 'notes'; notesPanel.append(notesSlot); panes.append(notesPanel);
+    workspace.append(panes);
     const bottom = el("footer", "bottom"), nav = el("div", "nav-line"), paging = el("div", "controls");
     const indexes = matchingIndexes(), position = indexes.indexOf(active);
     const previous = iconButton("Previous question", "previous", () => step(-1)), next = iconButton("Next question", "next", () => step(1));

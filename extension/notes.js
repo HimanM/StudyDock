@@ -6,7 +6,7 @@
   const noteIcon = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M3,10h11v2H3V10z M3,8h11V6H3V8z M3,16h7v-2H3V16z M18.01,12.87l0.71-0.71c0.39-0.39,1.02-0.39,1.41,0l0.71,0.71 c0.39,0.39,0.39,1.02,0,1.41l-0.71,0.71L18.01,12.87z M17.3,13.58l-5.3,5.3V21h2.12l5.3-5.3L17.3,13.58z"/></svg>';
   const minimizePath = 'M4 11h16v2H4z', expandPath = 'M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z';
   let host, shadow, current, shownStamp, targetStamp, trigger, pending = Promise.resolve(), writes = 0, failed = false, enabled = true, opening = 0;
-  let placement = 'floating';
+  let placement = 'floating', activePrompt, nativeLayout;
   const buttons = new WeakMap();
   const node = (tag, text) => { const element = document.createElement(tag); if (text) element.textContent = text; return element; };
   function mount() {
@@ -20,8 +20,9 @@
       *{box-sizing:border-box}[hidden]{display:none!important}
       section{width:min(480px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:20px;background:var(--surface);color:var(--ink);font:14px/1.55 system-ui;border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 48px #0004;animation:enter 160ms ease-out;transition:width 160ms ease}
       :host([data-minimized]) section{width:min(320px,calc(100vw - 36px));padding:12px 16px}
-      :host([data-docked]){top:12px!important;right:12px!important;bottom:12px!important;width:var(--study-notes-width)}
-      :host([data-docked]) section{width:100%;height:100%;max-height:none;display:flex;flex-direction:column;box-shadow:none;padding:20px}
+      :host([data-docked]){position:static!important;inset:auto!important;z-index:auto!important;width:100%;height:100%;min-width:0;min-height:0;display:block}
+      :host([hidden]){display:none!important}
+      :host([data-docked]) section{width:100%;height:100%;max-height:none;min-height:360px;display:flex;flex-direction:column;box-shadow:none;border:0;padding:24px;animation:none}
       :host([data-docked]) #editor{display:flex;flex:1;min-height:0;flex-direction:column}
       :host([data-docked]) textarea{flex:1;min-height:140px;max-height:none;resize:none}
       .placement{display:flex;align-items:center;gap:8px;margin:12px 0}.placement label{margin:0;font-size:12px;color:var(--muted)}
@@ -75,12 +76,37 @@
     layout();
   }
   function close() { if (host) host.hidden = true; layout(); trigger?.focus(); }
+  function moveTo(parent) {
+    if (!host || host.parentElement === parent) return;
+    const focused = shadow.activeElement;
+    parent.append(host);
+    focused?.focus({preventScroll:true});
+  }
+  function releaseDock() {
+    nativeLayout?.removeAttribute('data-study-notes-layout'); nativeLayout = null;
+    host?.removeAttribute('slot');
+    moveTo(document.body);
+  }
   function layout() {
-    const docked = !!host && !host.hidden && !host.hasAttribute('data-minimized') && placement === 'docked' && innerWidth >= 1100;
     const root = document.documentElement;
-    root.toggleAttribute('data-study-notes-docked',docked);
     const review = document.querySelector('#udemy-study-review');
+    const question = activePrompt?.isConnected && activePrompt.closest(`[class*="quiz-view--container--"],${wrapper}`);
+    const nativeTarget = question?.parentElement;
+    const docked = !!host && !host.hidden && !host.hasAttribute('data-minimized') && placement === 'docked' && innerWidth >= 1100 && !!(review || nativeTarget);
+    if (nativeLayout && (!docked || review || nativeLayout !== nativeTarget)) {
+      nativeLayout.removeAttribute('data-study-notes-layout'); nativeLayout = null;
+    }
+    if (docked && review) {
+      host.slot = 'notes'; moveTo(review);
+    } else if (docked) {
+      host.removeAttribute('slot'); nativeLayout = nativeTarget;
+      const siblings = [...nativeTarget.children].filter(child => child !== host && getComputedStyle(child).display !== 'none' && !['absolute','fixed'].includes(getComputedStyle(child).position));
+      host.style.setProperty('--study-note-row',String(siblings.indexOf(question)+1));
+      nativeLayout.setAttribute('data-study-notes-layout',''); moveTo(nativeTarget);
+    } else { host?.removeAttribute('slot'); moveTo(document.body); }
+    root.toggleAttribute('data-study-notes-docked',docked);
     review?.toggleAttribute('data-notes-docked',docked);
+    review?.shadowRoot.querySelector('.splitter')?.setAttribute('aria-label',docked ? 'Resize notes panel' : 'Resize explanation panel');
     const explain = review?.shadowRoot.querySelector('[data-control="explanation"]');
     review?.shadowRoot.querySelector('[data-control="notes"]')?.setAttribute('aria-pressed',String(!!host && !host.hidden));
     if (explain) {
@@ -110,6 +136,7 @@
   const stampFor = (prompt,number) => JSON.stringify([location.pathname,number,StudyDockNotes.content(prompt)]);
   async function open(prompt, number, button, focus = true) {
     const request = ++opening;
+    activePrompt = prompt;
     mount(); host.hidden = false; trigger = button;
     if (focus) setMinimized(false);
     shadow.querySelector('#text').disabled = true;
@@ -195,12 +222,11 @@
     button.style.marginLeft = Math.max(0, textLeft - base) + 'px';
   }
   const style = node('style'); style.textContent = `
-    html{--study-notes-width:clamp(340px,30vw,440px)}
-    html[data-study-notes-docked]:not([data-study-focus]) body{width:calc(100% - var(--study-notes-width) - 24px)!important}
-    html[data-study-notes-docked] #udemy-study-review{right:calc(var(--study-notes-width) + 24px)!important}
+    [data-study-notes-layout]{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(320px,34%);column-gap:16px;align-items:stretch}
+    [data-study-notes-layout]>*{grid-column:1;min-width:0}
+    [data-study-notes-layout]>#studydock-notes{grid-column:2;grid-row:var(--study-note-row,1)}
     html[data-study-notes-docked]:not([data-study-focus]) :is([data-purpose="sidebar"],[class*="app--sidebar--"],[class*="sidebar--sidebar--"]){display:none!important}
     html[data-study-notes-docked]:not([data-study-focus]) [class*="app--content--"]{margin-right:0!important}
-    html[data-study-notes-docked]:not([data-study-focus]) [class*="curriculum-item-footer--footer"]{right:calc(var(--study-notes-width) + 24px)!important;width:auto!important}
     [data-study-mark-control]{border-radius:20px!important;padding:8px 14px!important;font:500 14px system-ui!important;min-height:36px!important}
     html[data-study-dark] [data-study-mark-control]{color:#c1d8fa!important;background:#2a405d!important}
     .studydock-note-button{display:inline-flex;align-items:center;align-self:flex-start;justify-self:start;width:max-content!important;max-width:100%;gap:8px;margin:12px 0;padding:8px 14px;border:0;border-radius:20px;background:#dce9fc;color:#285ea8;font:500 14px system-ui;cursor:pointer}
@@ -222,5 +248,5 @@
     }
   });
   window.addEventListener('beforeunload', event => { if (writes || failed) { event.preventDefault(); event.returnValue = ''; } });
-  globalThis.StudyDockNoteUI = {open, follow, close, layout, docked:() => !!host?.hasAttribute('data-docked')};
+  globalThis.StudyDockNoteUI = {open, follow, close, layout, releaseDock, docked:() => !!host?.hasAttribute('data-docked')};
 })();

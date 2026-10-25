@@ -109,13 +109,20 @@ def main():
         exam_panel.get_by_label('View',exact=True).select_option('docked')
         exam.wait_for_function("document.documentElement.hasAttribute('data-study-notes-docked')")
         assert exam.locator('[data-purpose=sidebar]').is_hidden()
-        assert exam.locator('main').bounding_box()['width'] < 950
+        assert exam_panel.evaluate("node=>node.parentElement.hasAttribute('data-study-notes-layout') && getComputedStyle(node).position==='static'")
+        question_box=exam.locator('[class*=quiz-view--container]').bounding_box()
+        note_box=exam_panel.bounding_box()
+        assert abs(question_box['y']-note_box['y'])<1
+        assert abs(question_box['height']-note_box['height'])<1
+        assert question_box['x']+question_box['width']<note_box['x']
+        screenshot(exam,'exam-notes-docked.png')
         exam_panel.get_by_role('button',name='Course sidebar',exact=True).click()
         assert exam.locator('[data-purpose=sidebar]').is_visible()
         exam.get_by_role('button',name='Notes',exact=True).click()
         assert exam_panel.get_attribute('data-docked') is not None
         exam_panel.get_by_label('View',exact=True).select_option('floating')
         exam.wait_for_function("!document.documentElement.hasAttribute('data-study-notes-docked')")
+        assert exam_panel.evaluate("node=>node.parentElement===document.body && getComputedStyle(node).position==='fixed'")
         original_prompt=exam.locator('#question-prompt').inner_html()
         next_prompt=page.locator('[id="question-prompt"]').nth(1).inner_html()
         exam_panel.locator('textarea').fill('Exam question one reminder')
@@ -160,7 +167,31 @@ def main():
         panel.get_by_label('View',exact=True).select_option('docked')
         page.wait_for_function("document.querySelector('#udemy-study-review').hasAttribute('data-notes-docked')")
         assert review.locator('.explanation').is_hidden()
+        assert panel.evaluate("node=>node.parentElement.id==='udemy-study-review' && node.assignedSlot?.name==='notes' && getComputedStyle(node).position==='static'")
+        question_box=review.locator('.question').bounding_box()
+        note_box=panel.bounding_box()
+        assert abs(question_box['y']-note_box['y'])<1
+        assert abs(question_box['height']-note_box['height'])<1
         assert review.locator('.question').bounding_box()['x'] + review.locator('.question').bounding_box()['width'] < panel.bounding_box()['x']
+        splitter=review.get_by_role('separator',name='Resize notes panel')
+        before=note_box['width']; splitter.focus(); page.keyboard.press('ArrowLeft')
+        assert panel.bounding_box()['width']>before
+        review.get_by_role('button',name='Next question',exact=True).click()
+        panel.get_by_role('heading',name='Question 2 · Notes',exact=True).wait_for()
+        review.get_by_role('button',name='Previous question',exact=True).click()
+        panel.get_by_role('heading',name='Question 1 · Notes',exact=True).wait_for()
+        assert panel.locator('textarea').input_value()=='Explanation remains open while I type e.'
+        page.evaluate("chrome.storage.local.set({explanationSide:'left'})")
+        page.wait_for_function("document.querySelector('#udemy-study-review').shadowRoot.querySelector('.panes').classList.contains('left')")
+        assert review.locator('.question').bounding_box()['x']<panel.bounding_box()['x']
+        assert panel.locator('textarea').input_value()=='Explanation remains open while I type e.'
+        page.evaluate("chrome.storage.local.set({explanationSide:'right'})")
+        page.wait_for_function("!document.querySelector('#udemy-study-review').shadowRoot.querySelector('.panes').classList.contains('left')")
+        review.get_by_role('button',name='Original view',exact=True).click()
+        assert panel.is_visible()
+        assert panel.locator('textarea').input_value()=='Explanation remains open while I type e.'
+        page.get_by_role('button',name='Focus review',exact=True).click()
+        page.wait_for_function("document.querySelector('#studydock-notes').assignedSlot?.name==='notes'")
         screenshot(page,'review-notes-docked.png')
         review.get_by_role('button',name='Show explanation',exact=True).click()
         assert panel.is_hidden() and review.locator('.explanation').is_visible()

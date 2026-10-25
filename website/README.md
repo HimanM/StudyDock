@@ -4,7 +4,7 @@ A single-page Next.js static export using Material UI components, Material icons
 
 ## Develop and build
 
-Node 22+ and npm are needed only for development/building. From `website/`:
+Node 22+ and npm are needed for website development. Building also needs Python 3.9+ (standard library only) to package the extension download. From `website/`:
 
 ```sh
 npm ci
@@ -18,6 +18,8 @@ npm test
 npm run build
 ```
 
+`npm run build` first packages only `../extension/` into `public/downloads/StudyDock-extension.zip`, with `manifest.json` at the ZIP root. This generated file is ignored by Git and included in the static export. It is hosted by GitHub Pages, independently of desktop release assets and repository visibility. No desktop code, website source or tests are included in the extension ZIP.
+
 Upload the contents of `out/` to a static host. Do not upload `node_modules`, the repository or `.next`. For local inspection of the exported build, run `python -m http.server 4173 --directory out` and open `http://localhost:4173`.
 
 The build follows [Next.js static-export guidance](https://nextjs.org/docs/app/guides/static-exports) and [Material UI's App Router integration](https://mui.com/material-ui/integrations/nextjs/).
@@ -30,8 +32,8 @@ Environment variables are read when building, not when serving the exported file
 | --- | --- |
 | `NEXT_PUBLIC_BASE_PATH` | Empty for `udemystudytool.himanm.com`. Set `/Udemy-Study-Tools` only when building for the GitHub project URL without the custom domain. No trailing slash. |
 | `NEXT_PUBLIC_SITE_URL` | Set the complete deployed homepage URL with a trailing slash to generate absolute social-preview image URLs. No assumed public deployment is embedded when unset. |
-| `NEXT_PUBLIC_CHROME_STORE_URL` | Empty until the extension is published. Only an HTTPS `chromewebstore.google.com/detail/…` URL activates the store-install CTA. Otherwise it downloads GitHub's repository ZIP; the page explains selecting its `extension` folder in Chrome. |
-| `NEXT_PUBLIC_REPO_PRIVATE` | `true`. Set `false` after making the GitHub repository public, to remove the private-download access note. This does not change repository visibility. |
+| `NEXT_PUBLIC_CHROME_STORE_URL` | Empty until the extension is published. Only an HTTPS `chromewebstore.google.com/detail/…` URL activates the store-install CTA. Otherwise it downloads the extension-only ZIP from `/downloads/StudyDock-extension.zip`. Extract it and load the folder containing `manifest.json` in Chrome. |
+| `NEXT_PUBLIC_REPO_PRIVATE` | `true`. Set `false` after making the GitHub repository public, to remove the desktop-download access note. The extension ZIP on the public website does not require repository access. This does not change repository visibility. |
 | `NEXT_TELEMETRY_DISABLED` | Set `1` to disable Next.js build-tool telemetry. The published website has no Next.js runtime server. |
 
 The current desktop version is deliberately `1.4.3` in `lib/config.js`, matching the published app packages. The source extension can have a newer version. When a new desktop release is actually published, update that constant and rebuild. Download URLs are direct GitHub release URLs; they are not fabricated store links.
