@@ -154,7 +154,8 @@ def main():
         exam.wait_for_function("document.documentElement.hasAttribute('data-study-notes-docked')")
         exam.evaluate("history.pushState({},'', '/course/test/learn/overview');document.querySelector('main').replaceChildren()")
         exam_panel.wait_for(state='hidden')
-        assert exam.locator('[data-purpose=sidebar]').is_visible()
+        exam.locator('[data-purpose=sidebar]').wait_for(state='visible')
+        assert exam.locator('[data-study-notes-layout]').count()==0
         # Focused notes remain visible and typing does not trigger review shortcuts.
         page.evaluate("chrome.storage.local.set({notesEnabled:true,focusReview:true,darkMode:true})")
         inject(page,'review.js')
