@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "StudyDock",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Question notes, focused Udemy review, readable dark mode and private browser or desktop study exports.",
   "permissions": ["tabGroups", "scripting", "storage"],
   "host_permissions": ["https://*.udemy.com/*", "http://127.0.0.1:8765/*"],

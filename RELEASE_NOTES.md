@@ -1,8 +1,9 @@
-## StudyDock 1.4.0
+## StudyDock 1.4.1
 
 - New StudyDock identity and generated notebook icon; creator and GitHub links live in Settings.
 - Browser-only question notes during exams and review, saved automatically in Chrome.
 - Open notes follow focused-review navigation, preserving drafts on save failures. Native Notes buttons and exam footer controls have aligned icons and consistent spacing.
+- A larger, resizable notes editor with a single focus border and minimize/expand controls; minimized notes continue following focused-review questions.
 - Native dark mode supports Udemy's modern CSS colors and keeps the course sidebar dark during scroll updates.
 - Notes attach to matching questions in both browser and desktop exports. Notes-only Markdown/JSON downloads include question numbers.
 - Browser exports with detail, format and question batch controls; the desktop app is optional.

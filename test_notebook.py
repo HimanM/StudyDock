@@ -8,7 +8,7 @@ ROOT = Path(__file__).parent
 MOCK = """() => {
   window.saved = {}; window.listeners = []; window.failSave = false;
   window.chrome = {
-    runtime: {getManifest:()=>({version:'1.4.0'}), openOptionsPage:async()=>{}, getURL:path=>path},
+    runtime: {getManifest:()=>({version:'1.4.1'}), openOptionsPage:async()=>{}, getURL:path=>path},
     storage: {local: {
       get:async keys => keys === null ? {...saved} : typeof keys === 'string' ? {[keys]:saved[keys]} : {...keys,...Object.fromEntries(Object.entries(saved).filter(([key])=>key in keys))},
       set:async values => { if(failSave && Object.keys(values).some(key=>key.startsWith('studydock.note.'))) throw Error('Storage unavailable');
@@ -101,9 +101,15 @@ def main():
         review.get_by_role('button',name='Notes',exact=True).click()
         panel.get_by_role('textbox',name='Your note').fill('Explanation remains open while I type e.')
         assert panel.is_visible() and review.locator('.explanation').is_visible()
+        assert panel.locator('textarea').evaluate("node=>getComputedStyle(node).outlineStyle==='none' && getComputedStyle(node).borderTopWidth==='2px'")
         screenshot(page,'review-with-notes.png')
+        panel.get_by_role('button',name='Minimize notes',exact=True).click()
+        assert panel.locator('textarea').is_hidden()
         review.get_by_role('button',name='Next question',exact=True).click()
         panel.get_by_role('heading',name='Question 2 · Notes',exact=True).wait_for()
+        assert panel.locator('textarea').is_hidden()
+        screenshot(page,'review-notes-minimized.png')
+        panel.get_by_role('button',name='Expand notes',exact=True).click()
         assert panel.locator('textarea').input_value() == ''
         panel.locator('textarea').fill('Second question note')
         review.get_by_role('button',name='Previous question',exact=True).click()

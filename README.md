@@ -31,11 +31,11 @@ Download the matching package from [Releases](https://github.com/HimanM/Udemy-St
 
 Linux builds target Ubuntu 22.04 or newer and compatible glibc desktop distributions. No Python, pip, virtual environment, FUSE, or separate app runtime installation is needed. A graphical desktop with its usual X11/XWayland system libraries is required. A single binary cannot cover incompatible CPU/libc families: Alpine/musl, older glibc, and Linux ARM are not covered. See [PyInstaller's Linux compatibility explanation](https://pyinstaller.org/en/stable/usage.html#making-gnu-linux-apps-forward-compatible).
 
-Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.0/StudyDock-1.4.0-linux-x64.bin) while signed into GitHub, then run from that download directory:
+Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.1/StudyDock-1.4.1-linux-x64.bin) while signed into GitHub, then run from that download directory:
 
 ```sh
-chmod +x StudyDock-1.4.0-linux-x64.bin
-./StudyDock-1.4.0-linux-x64.bin --install
+chmod +x StudyDock-1.4.1-linux-x64.bin
+./StudyDock-1.4.1-linux-x64.bin --install
 ```
 
 Omit `--install` to run it without installation. The installed binary and icon go under your user data directory. The Chrome setup button copies the bundled extension to a permanent folder, so Chrome never depends on a temporary unpacking directory. Some desktops require **Allow Launching** on a new desktop icon, or disable desktop icons entirely; the application-menu entry remains available. As a private GitHub release, this is not an anonymous `curl | sh` URL.
@@ -91,7 +91,7 @@ The lower half of this page lists saved notes. Filter by test and download notes
 
 ### Question notes
 
-Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. In focused review, open notes follow the selected question after saving the previous draft. If saving fails, the editor keeps that draft and its question label until you retry. Close it with Close or Escape. If Udemy's question number cannot be detected, you can enter it yourself.
+Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. Use **Minimize notes** to keep a compact question/status bar, or **Expand notes** to return to the larger, resizable writing area. In focused review, notes follow the selected question even when minimized, after saving the previous draft. If saving fails, the editor keeps that draft and its question label until you retry. Close it with Close or Escape. If Udemy's question number cannot be detected, you can enter it yourself.
 
 Notes match normalized prompt text, question-image paths and available answer-choice text within the same quiz. Numbers and answer order do not identify a question. Notes therefore follow matching questions across attempts; changed question content or an unrecognized author/layout may prevent a match. Notes-only question numbers reflect the last saved source attempt. In full-test exports, notes appear under the current question number.
 
