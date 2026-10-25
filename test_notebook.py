@@ -116,6 +116,12 @@ def main():
         assert abs(question_box['height']-note_box['height'])<1
         assert question_box['x']+question_box['width']<note_box['x']
         screenshot(exam,'exam-notes-docked.png')
+        exam.locator('[class*=quiz-view--container]').evaluate('''node=>{
+          const replacement=node.cloneNode(true);replacement.querySelector('.studydock-note-button').remove();node.replaceWith(replacement);
+        }''')
+        exam.get_by_role('button',name='Notes',exact=True).wait_for()
+        assert exam_panel.get_attribute('data-docked') is not None
+        assert exam_panel.locator('textarea').input_value()=='A revised note'
         exam_panel.get_by_role('button',name='Course sidebar',exact=True).click()
         assert exam.locator('[data-purpose=sidebar]').is_visible()
         exam.get_by_role('button',name='Notes',exact=True).click()

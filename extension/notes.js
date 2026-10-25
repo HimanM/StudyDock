@@ -186,6 +186,7 @@
   }
   function follow(prompt, number, button) {
     if (!host || host.hidden) return;
+    activePrompt = prompt;
     trigger = button;
     if (targetStamp !== stampFor(prompt,number)) void open(prompt, number, button, false);
   }
