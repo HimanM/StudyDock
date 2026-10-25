@@ -43,7 +43,10 @@
     </div><footer><output id="status" role="status">Saved in this browser</output><button id="retry" hidden>Retry save</button></footer></section>`;
     document.body.append(host);
     shadow.querySelector('#close').onclick = () => close();
-    shadow.querySelector('#return').onclick = () => close();
+    shadow.querySelector('#return').onclick = () => {
+      const explain = document.querySelector('#udemy-study-review')?.shadowRoot.querySelector('[data-control="explanation"]');
+      if (explain && host.hasAttribute('data-docked')) explain.click(); else close();
+    };
     shadow.querySelector('#placement').onchange = async event => {
       const next = event.target.value;
       try { await chrome.storage.local.set({notesPlacement:next}); placement = next; layout(); }
@@ -91,7 +94,7 @@
     shadow.querySelector('#placement').value = placement;
     const back = shadow.querySelector('#return'); back.hidden = !docked;
     back.textContent = root.hasAttribute('data-study-focus') ? 'Explanation' : 'Course sidebar';
-    back.title = 'Close Notes and restore the previous workspace';
+    back.title = root.hasAttribute('data-study-focus') ? 'Switch from Notes to Explanation' : 'Close Notes and restore the course sidebar';
   }
   function save() {
     if (!current) return;
