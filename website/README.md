@@ -45,7 +45,7 @@ The **Website** workflow tests/builds on relevant pushes and PRs. It uploads a s
 3. Run **Actions → Website → Run workflow**, choosing **Publish to GitHub Pages**.
 4. Set the Pages custom domain to `udemystudytool.himanm.com`. In Cloudflare DNS, add a **CNAME** named `udemystudytool` with target `himanm.github.io`, initially **DNS only**. GitHub may also request domain verification; follow the exact TXT record it gives you rather than inventing a token.
 5. After DNS validation and certificate provisioning, enable **Enforce HTTPS** in Pages. The repository's `public/CNAME` also records the requested hostname.
-6. Verify `https://udemystudytool.himanm.com/`, download links and `#privacy` while signed out before using those URLs in a public store listing. The site can be public while release/source downloads still require access to this private repository.
+6. Verify `https://udemystudytool.himanm.com/`, download links and `/privacy/` while signed out before using those URLs in a public store listing. The site can be public while release/source downloads still require access to this private repository.
 
 The workflow builds for the custom domain at `/`, with absolute social-preview URLs under `https://udemystudytool.himanm.com/`. For a different host, build with the appropriate base path/site URL and upload `out/`. DNS access is separate from GitHub repository access; committing the CNAME file alone does not create the DNS record.
 
@@ -55,7 +55,7 @@ The workflow builds for the custom domain at `/`, with absolute social-preview U
 - `components/` contains the working demo, screenshot viewer, theme controls and download selector.
 - `lib/config.js` contains release URLs and OS detection; Mac chip and Linux libc compatibility are not inferred from the browser.
 - `lib/demo.js` contains illustrative questions and the example Markdown/JSON serializer. Demo notes are held only in memory until reload.
-- `components/Privacy.jsx` renders `../docs/PRIVACY.md` at build time, keeping the website policy and submission document aligned.
+- `components/Privacy.jsx` renders `../docs/PRIVACY.md` at build time on `/privacy/`. Both homepage Privacy links open that page, which also works without JavaScript. The homepage's existing `#privacy` anchor remains a short introduction with a policy link.
 - `public/images/` contains the product previews and app icon. No personal Udemy screenshot or real course export is used.
 
 The default theme follows the system. A manual choice is saved in the site's local storage. All icons come from `@mui/icons-material`; interface components use `@mui/material`. Custom layout CSS uses the same surface/color palette. Reduced motion is respected. Navigation, controls and screenshot dialogs are keyboard accessible.

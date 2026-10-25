@@ -33,6 +33,8 @@ try:
         page.on('response',lambda response:failed.append(response.url) if response.status>=400 else None)
         page.goto(url); page.get_by_role('heading',level=1).wait_for()
         assert page.locator('h1').count()==1
+        assert '\u2014' not in page.title()
+        assert '\u2014' not in page.locator('body').inner_text()
         page.wait_for_function("document.documentElement.dataset.theme==='dark'")
         assert page.locator('a[href*="chromewebstore.google.com"]').count()==0
         assert page.get_by_role('link',name='Download extension',exact=True).first.get_attribute('href')=='https://github.com/HimanM/Udemy-Study-Tools/archive/refs/heads/main.zip'
@@ -78,8 +80,26 @@ try:
         page.reload(); page.wait_for_function("document.documentElement.dataset.theme==='light'")
         if os.environ.get('SCREENSHOTS'):
             page.screenshot(path=str(ROOT.parent/'.dev-previews/website-light-1440.png'),full_page=True,animations='disabled')
-        page.get_by_text('Read the privacy policy',exact=True).click()
+        page.get_by_role('link',name='Privacy',exact=True).focus()
+        page.keyboard.press('Enter')
+        page.wait_for_url(url+'privacy/')
+        page.get_by_role('heading',name='Privacy policy',exact=True).wait_for()
         page.get_by_role('heading',name='Storage, exports and the optional desktop connection').wait_for()
+        for width in [390,1440]:
+            page.set_viewport_size({'width':width,'height':844})
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth'),width
+            if os.environ.get('SCREENSHOTS'):
+                page.screenshot(path=str(ROOT.parent/f'.dev-previews/website-privacy-{width}.png'),full_page=True,animations='disabled')
+        page.get_by_role('link',name='Back to StudyDock',exact=True).click()
+        page.wait_for_url(url)
+        page.get_by_role('link',name='Read the privacy policy',exact=True).click()
+        page.wait_for_url(url+'privacy/')
+        assert '\u2014' not in page.locator('body').inner_text()
+        policy_context=browser.new_context(java_script_enabled=False)
+        policy_page=policy_context.new_page()
+        policy_page.goto(url+'privacy/')
+        policy_page.get_by_role('heading',name='Retention and deletion',exact=True).wait_for()
+        policy_context.close()
         assert errors==[],errors
         assert failed==[],failed
         # Keep OS suggestions separate from unknown chip/libc information.
