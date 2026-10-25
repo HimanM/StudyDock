@@ -31,11 +31,11 @@ Download the matching package from [Releases](https://github.com/HimanM/Udemy-St
 
 Linux builds target Ubuntu 22.04 or newer and compatible glibc desktop distributions. No Python, pip, virtual environment, FUSE, or separate app runtime installation is needed. A graphical desktop with its usual X11/XWayland system libraries is required. A single binary cannot cover incompatible CPU/libc families: Alpine/musl, older glibc, and Linux ARM are not covered. See [PyInstaller's Linux compatibility explanation](https://pyinstaller.org/en/stable/usage.html#making-gnu-linux-apps-forward-compatible).
 
-Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.1/StudyDock-1.4.1-linux-x64.bin) while signed into GitHub, then run from that download directory:
+Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.2/StudyDock-1.4.2-linux-x64.bin) while signed into GitHub, then run from that download directory:
 
 ```sh
-chmod +x StudyDock-1.4.1-linux-x64.bin
-./StudyDock-1.4.1-linux-x64.bin --install
+chmod +x StudyDock-1.4.2-linux-x64.bin
+./StudyDock-1.4.2-linux-x64.bin --install
 ```
 
 Omit `--install` to run it without installation. The installed binary and icon go under your user data directory. The Chrome setup button copies the bundled extension to a permanent folder, so Chrome never depends on a temporary unpacking directory. Some desktops require **Allow Launching** on a new desktop icon, or disable desktop icons entirely; the application-menu entry remains available. As a private GitHub release, this is not an anonymous `curl | sh` URL.

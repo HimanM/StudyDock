@@ -22,6 +22,7 @@
     html[data-study-dark] {color-scheme:dark}
     html[data-study-dark] body {background:#171b20!important;color:#e0e4eb!important}
     html[data-study-dark] [data-study-native-surface] {background-color:#20252b!important;border-color:#3c4550!important}
+    html[data-study-dark] :is(label:has(input:checked),[role=radio][aria-checked=true],[role=checkbox][aria-checked=true],[data-purpose=answer][data-checked=true]) {background-color:#2a405d!important;border-color:#adcaff!important;color:#eef1f6!important}
     html[data-study-dark] [data-study-native-ink] {color:#eef1f6!important}
     html[data-study-dark] [data-study-native-ink=dark] {color:#20252c!important}
     html[data-study-dark] a[data-study-native-ink]:not(.ud-btn) {color:#b8d3fa!important}
@@ -507,6 +508,9 @@
   let themedNodes = new WeakSet();
   const dirtyThemeNodes = new Set();
   let themeFrame;
+  function scheduleTheme() {
+    if (!themeFrame && settings.darkMode) themeFrame = requestAnimationFrame(() => { themeFrame = null; themeNativePage(); });
+  }
   function themeNativePage() {
     if (!settings.darkMode) {
       all("[data-study-native-surface],[data-study-native-ink]").forEach(node => {
@@ -610,13 +614,23 @@
   });
   new MutationObserver(records => {
     for (const record of records) if (record.type === 'attributes') {
-      for (const node of [record.target,...record.target.querySelectorAll('*')]) {
+      const root = record.target.matches('input') ? record.target.closest('label') || record.target.parentElement : record.target;
+      for (const node of [root,...root.querySelectorAll('*')]) {
         dirtyThemeNodes.add(node);
       }
     }
-    if (!themeFrame && settings.darkMode) themeFrame = requestAnimationFrame(() => { themeFrame = null; themeNativePage(); });
+    scheduleTheme();
     schedule();
-  }).observe(document.body, {subtree: true, childList: true, attributes:true, attributeFilter:['class','style']});
+  }).observe(document.body, {subtree: true, childList: true, attributes:true, attributeFilter:['class','style','checked','data-checked','aria-checked','aria-selected','disabled']});
+  // Hover, focus and input.checked can change CSS without a DOM attribute mutation.
+  for (const type of ['pointerover','pointerout','focusin','focusout','change']) document.addEventListener(type, event => {
+    if (!settings.darkMode || !(event.target instanceof Element) || event.target.closest('#udemy-study-review,#studydock-notes')) return;
+    const root = event.target.closest('label,button,a,[role=option],[role=radio],[role=checkbox],[data-purpose=answer]') || event.target;
+    if (root === document.body || root === document.documentElement) return;
+    for (const node of root.querySelectorAll('*')) dirtyThemeNodes.add(node);
+    for (let node=root; node && node!==document.body; node=node.parentElement) dirtyThemeNodes.add(node);
+    scheduleTheme();
+  }, true);
   window.addEventListener("popstate", schedule);
   setInterval(() => { if (path !== location.pathname) sync(); }, 1000);
   globalThis.udemyStudyReview = async () => { settings = await chrome.storage.local.get(defaults); sync(); };

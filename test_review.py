@@ -360,7 +360,29 @@ def main():
         page.wait_for_function("getComputedStyle(document.querySelector('#modern-colors')).backgroundColor==='rgb(166, 233, 183)'")
         assert page.locator('#modern-colors').get_attribute('data-study-native-surface') is None
         screenshot(page,'native-contrast.png')
+        page.evaluate('''() => {
+          const style=document.createElement('style');
+          style.textContent='#exam-options label {display:block;padding:20px;margin:10px;border:1px solid #888;color:#e0e4eb} #exam-options label:hover,#exam-options label:focus-within,#exam-options label:has(input:checked),#exam-role[aria-checked=true] {background:#f6f7f9}';
+          document.head.append(style);
+          const options=document.createElement('section');options.id='exam-options';
+          options.innerHTML='<label><input type="radio" name="answer" value="one"> First answer</label><label><input type="radio" name="answer" value="two"> Second answer</label><div id="exam-role" role="checkbox" aria-checked="false" tabindex="0">Custom answer</div>';
+          document.body.prepend(options);
+        }''')
+        first_answer = page.locator('#exam-options label').first
+        second_answer = page.locator('#exam-options label').nth(1)
+        second_answer.hover()
+        page.wait_for_function("getComputedStyle(document.querySelectorAll('#exam-options label')[1]).backgroundColor==='rgb(32, 37, 43)'")
+        second_answer.locator('input').check()
+        assert second_answer.evaluate("node=>getComputedStyle(node).backgroundColor") == 'rgb(42, 64, 93)'
+        first_answer.locator('input').check()
+        assert first_answer.evaluate("node=>getComputedStyle(node).backgroundColor") == 'rgb(42, 64, 93)'
+        assert not second_answer.locator('input').is_checked()
+        second_answer.locator('input').focus()
+        page.wait_for_function("getComputedStyle(document.querySelectorAll('#exam-options label')[1]).backgroundColor==='rgb(32, 37, 43)'")
+        page.locator('#exam-role').evaluate("node=>node.setAttribute('aria-checked','true')")
+        assert page.locator('#exam-role').evaluate("node=>getComputedStyle(node).backgroundColor") == 'rgb(42, 64, 93)'
         page.evaluate("chrome.storage.local.set({darkMode:false})")
+        assert first_answer.evaluate("node=>getComputedStyle(node).backgroundColor") == 'rgb(246, 247, 249)'
         assert page.locator('#native-card').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgb(255, 255, 255)'
         assert page.locator('[data-study-native-surface],[data-study-native-ink]').count() == 0
 
