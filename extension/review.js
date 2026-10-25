@@ -388,6 +388,8 @@
         void StudyDockNoteUI.open(question.node.querySelector('[id="question-prompt"]'), question.number, notes);
       }, "label-button");
       controls.append(notes);
+      const question = questions[active];
+      StudyDockNoteUI.follow(question.node.querySelector('[id="question-prompt"]'), question.number, notes);
     }
     control(settings.darkMode ? "Light mode" : "Dark mode", settings.darkMode ? "sun" : "moon", "theme", () => { save({darkMode: !settings.darkMode}); applyTheme(); });
     const menu = el("details", "settings"), summary = el("summary");
@@ -503,13 +505,20 @@
     toggle.title = settings.questionTrayOpen ? "Hide question tray" : "Show question tray";
   }
   let themedNodes = new WeakSet();
+  const dirtyThemeNodes = new Set();
+  let themeFrame;
   function themeNativePage() {
     if (!settings.darkMode) {
       all("[data-study-native-surface],[data-study-native-ink]").forEach(node => {
         node.removeAttribute("data-study-native-surface"); node.removeAttribute("data-study-native-ink");
       });
-      themedNodes = new WeakSet(); return;
+      themedNodes = new WeakSet(); dirtyThemeNodes.clear(); return;
     }
+    // Keep the old theme until replacement colors can be measured and applied before paint.
+    for (const node of dirtyThemeNodes) {
+      themedNodes.delete(node); node.removeAttribute('data-study-native-ink'); node.removeAttribute('data-study-native-surface');
+    }
+    dirtyThemeNodes.clear();
     const canvas = new OffscreenCanvas(1,1), context = canvas.getContext('2d',{willReadFrequently:true}), parsed = new Map();
     const rgb = value => {
       if (!parsed.has(value)) {
@@ -602,9 +611,10 @@
   new MutationObserver(records => {
     for (const record of records) if (record.type === 'attributes') {
       for (const node of [record.target,...record.target.querySelectorAll('*')]) {
-        themedNodes.delete(node); node.removeAttribute('data-study-native-ink'); node.removeAttribute('data-study-native-surface');
+        dirtyThemeNodes.add(node);
       }
     }
+    if (!themeFrame && settings.darkMode) themeFrame = requestAnimationFrame(() => { themeFrame = null; themeNativePage(); });
     schedule();
   }).observe(document.body, {subtree: true, childList: true, attributes:true, attributeFilter:['class','style']});
   window.addEventListener("popstate", schedule);

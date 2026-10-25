@@ -344,6 +344,21 @@ def main():
         assert page.locator('#modern-colors').evaluate('node=>getComputedStyle(node).backgroundColor') == 'rgb(32, 37, 43)'
         assert page.locator('#modern-colors p').evaluate('node=>getComputedStyle(node).color') == 'rgb(238, 241, 246)'
         assert page.locator('#modern-chart').get_attribute('data-study-native-surface') is None
+        # Scroll-driven class/style changes must never expose the original white surface.
+        assert page.locator('#modern-colors').evaluate('''async node => {
+          for(let i=0;i<18;i++) {
+            node.style.transform=`translateY(${i % 2}px)`;
+            node.classList.toggle('is-scrolling');
+            await Promise.resolve();
+            if(getComputedStyle(node).backgroundColor!=='rgb(32, 37, 43)') return false;
+            await new Promise(requestAnimationFrame);
+            if(getComputedStyle(node).backgroundColor!=='rgb(32, 37, 43)') return false;
+          }
+          return true;
+        }''')
+        page.locator('#modern-colors').evaluate("node=>node.style.background='#a6e9b7'")
+        page.wait_for_function("getComputedStyle(document.querySelector('#modern-colors')).backgroundColor==='rgb(166, 233, 183)'")
+        assert page.locator('#modern-colors').get_attribute('data-study-native-surface') is None
         screenshot(page,'native-contrast.png')
         page.evaluate("chrome.storage.local.set({darkMode:false})")
         assert page.locator('#native-card').evaluate('n=>getComputedStyle(n).backgroundColor') == 'rgb(255, 255, 255)'

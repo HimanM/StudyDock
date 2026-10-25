@@ -72,16 +72,19 @@
     }
     css += `
       [data-studydock-footer] {background:#fff!important;color:#20252c!important;border-color:#d7dfe8!important;gap:8px!important;}
-      [data-studydock-footer] button {border-radius:20px!important;min-height:36px!important;color:#285ea8!important;background:#e7edf5!important;border:0!important;transition:background-color 160ms,color 160ms;}
+      [data-studydock-controls] {display:flex!important;align-items:center!important;gap:6px!important;flex-wrap:wrap;padding:4px!important;}
+      [data-studydock-controls] > * {flex-shrink:0;}
+      [data-studydock-footer] button {display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:8px;border-radius:12px!important;height:40px!important;min-height:40px!important;min-width:40px!important;padding:8px 12px!important;color:#285ea8!important;background:transparent!important;border:0!important;transition:background-color 160ms,color 160ms;}
+      [data-studydock-footer] button.ud-btn-icon {width:40px!important;padding:10px!important;}
       [data-studydock-footer] button:hover {background:#dce9fc!important;}
       [data-studydock-footer] button:focus-visible {outline:2px solid #285ea8!important;outline-offset:3px;}
       [data-studydock-footer] button:disabled {opacity:.55;cursor:default;}
       html[data-study-dark] [data-studydock-footer] {background:#20252b!important;color:#eef1f6!important;border-color:#536071!important;}
-      html[data-study-dark] [data-studydock-footer] button {background:#2c333c!important;color:#c1d8fa!important;}
+      html[data-study-dark] [data-studydock-footer] button {background:transparent!important;color:#c1d8fa!important;}
       html[data-study-dark] [data-studydock-footer] button:hover {background:#2a405d!important;}
-      [data-studydock-footer] button svg {fill:currentColor!important;color:inherit!important;}
-      #udemy-study-height-toggle {border:0!important;border-radius:20px!important;padding:8px 14px!important;
-        min-height:36px!important;background:#e7edf5!important;color:#285ea8!important;font:500 13px/1.5 system-ui!important;
+      [data-studydock-footer] button svg {display:block!important;flex:0 0 20px!important;width:20px!important;height:20px!important;margin:0!important;fill:currentColor!important;color:inherit!important;}
+      #udemy-study-height-toggle {border:0!important;border-radius:12px!important;padding:8px 14px!important;
+        min-height:40px!important;background:#e7edf5!important;color:#285ea8!important;font:500 13px/1.5 system-ui!important;
         transition:background-color 160ms,color 160ms;}
       #udemy-study-height-toggle[aria-pressed=true] {background:#dce9fc!important;}
       #udemy-study-height-toggle:focus-visible {outline:2px solid #285ea8;outline-offset:3px;}
@@ -101,6 +104,9 @@
     const buttonId = "udemy-study-height-toggle";
     let button = document.getElementById(buttonId);
     const expanded = document.querySelector('[data-purpose="theatre-mode-toggle-button"]');
+    const anchor = expanded?.closest('[class*="popper-module--popper"]') || expanded;
+    if (onExam && anchor) anchor.parentElement.setAttribute('data-studydock-controls','');
+    else document.querySelectorAll('[data-studydock-controls]').forEach(node => node.removeAttribute('data-studydock-controls'));
     if (onExam && expanded && !button) {
       button = document.createElement("button");
       button.id = buttonId;
@@ -109,7 +115,6 @@
       // Google Material unfold_more (Apache 2.0).
       button.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 5.83L15.17 9l1.41-1.41L12 3 7.41 7.59 8.83 9 12 5.83zm0 12.34L8.83 15l-1.41 1.41L12 21l4.59-4.59L15.17 15 12 18.17z"/></svg><span></span>';
       button.addEventListener("click", () => chrome.storage.local.set({fullHeight: !settings.fullHeight}));
-      const anchor = expanded.closest('[class*="popper-module--popper"]') || expanded;
       anchor.after(button);
     }
     if (button) {

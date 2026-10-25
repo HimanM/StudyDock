@@ -91,7 +91,7 @@ The lower half of this page lists saved notes. Filter by test and download notes
 
 ### Question notes
 
-Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. The panel keeps its labelled question while you navigate, so typing cannot silently move a note to another question. Close it with Close or Escape. If Udemy's question number cannot be detected, you can enter it yourself.
+Click **Notes** beside a question on Udemy, or in focused review's top bar. Notes save as you type; the panel reports save failures and offers a retry. In focused review, open notes follow the selected question after saving the previous draft. If saving fails, the editor keeps that draft and its question label until you retry. Close it with Close or Escape. If Udemy's question number cannot be detected, you can enter it yourself.
 
 Notes match normalized prompt text, question-image paths and available answer-choice text within the same quiz. Numbers and answer order do not identify a question. Notes therefore follow matching questions across attempts; changed question content or an unrecognized author/layout may prevent a match. Notes-only question numbers reflect the last saved source attempt. In full-test exports, notes appear under the current question number.
 

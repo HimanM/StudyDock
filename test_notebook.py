@@ -11,7 +11,7 @@ MOCK = """() => {
     runtime: {getManifest:()=>({version:'1.4.0'}), openOptionsPage:async()=>{}, getURL:path=>path},
     storage: {local: {
       get:async keys => keys === null ? {...saved} : typeof keys === 'string' ? {[keys]:saved[keys]} : {...keys,...Object.fromEntries(Object.entries(saved).filter(([key])=>key in keys))},
-      set:async values => { if(failSave) throw Error('Storage unavailable');
+      set:async values => { if(failSave && Object.keys(values).some(key=>key.startsWith('studydock.note.'))) throw Error('Storage unavailable');
         const changes = Object.fromEntries(Object.entries(values).map(([key,value])=>[key,{oldValue:saved[key],newValue:value}]));
         Object.assign(saved,values); queueMicrotask(()=>listeners.forEach(fn=>fn(changes,'local')));
       }},onChanged:{addListener:fn=>listeners.push(fn)}},
@@ -38,7 +38,10 @@ def main():
         page.goto(URL)
         page.evaluate(MOCK)
         inject(page,'notes-store.js'); inject(page,'notes.js')
+        page.locator('[id="question-prompt"]').first.evaluate("node=>node.style.paddingLeft='40px'")
+        page.evaluate("dispatchEvent(new Event('resize'))")
         page.locator('.studydock-note-button').first.click()
+        assert page.locator('.studydock-note-button').first.evaluate("node=>Math.abs(node.getBoundingClientRect().left-node.previousElementSibling.getBoundingClientRect().left-40)<1")
         panel = page.locator('#studydock-notes')
         panel.get_by_role('textbox',name='Your note').fill('Check availability across zones.\nMy own reasoning, not the answer key.')
         page.wait_for_function("Object.values(saved).some(note=>note.text?.startsWith('Check availability'))")
@@ -99,6 +102,38 @@ def main():
         panel.get_by_role('textbox',name='Your note').fill('Explanation remains open while I type e.')
         assert panel.is_visible() and review.locator('.explanation').is_visible()
         screenshot(page,'review-with-notes.png')
+        review.get_by_role('button',name='Next question',exact=True).click()
+        panel.get_by_role('heading',name='Question 2 · Notes',exact=True).wait_for()
+        assert panel.locator('textarea').input_value() == ''
+        panel.locator('textarea').fill('Second question note')
+        review.get_by_role('button',name='Previous question',exact=True).click()
+        panel.get_by_role('heading',name='Question 1 · Notes',exact=True).wait_for()
+        assert panel.locator('textarea').input_value() == 'Explanation remains open while I type e.'
+        # Rapid navigation must not let a late read replace the current question's draft.
+        page.evaluate('''() => {
+          const root=document.querySelector('#udemy-study-review').shadowRoot;
+          root.querySelector('[aria-label="Next question"]').click();
+          root.querySelector('[aria-label="Previous question"]').click();
+        }''')
+        page.wait_for_function("!document.querySelector('#studydock-notes').shadowRoot.querySelector('textarea').disabled")
+        assert panel.get_by_role('heading').inner_text() == 'Question 1 · Notes'
+        page.evaluate('failSave=true')
+        panel.locator('textarea').fill('Unsaved first question draft')
+        panel.get_by_text('Not saved: Storage unavailable',exact=True).wait_for()
+        review.get_by_role('button',name='Next question',exact=True).click()
+        panel.get_by_text('Still showing the previous question:',exact=False).wait_for()
+        assert panel.get_by_role('heading').inner_text() == 'Question 1 · Notes'
+        assert panel.locator('textarea').input_value() == 'Unsaved first question draft'
+        page.evaluate('failSave=false')
+        panel.get_by_role('button',name='Retry save').click()
+        panel.get_by_text('Saved in this browser',exact=True).wait_for()
+        review.get_by_role('button',name='Notes',exact=True).click()
+        panel.get_by_role('heading',name='Question 2 · Notes',exact=True).wait_for()
+        assert panel.locator('textarea').input_value() == 'Second question note'
+        page.set_viewport_size({'width':390,'height':480})
+        assert panel.locator('section').evaluate('node=>node.getBoundingClientRect().top>=0 && node.getBoundingClientRect().right<=innerWidth')
+        page.set_viewport_size({'width':1280,'height':900})
+        panel.locator('textarea').focus()
         page.keyboard.press('Escape')
         assert panel.is_hidden() and review.is_visible()
         # Pages work without any Python process or a background polling connection.

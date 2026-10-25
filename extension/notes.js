@@ -4,7 +4,7 @@
   const wrapper = '[class*="result-pane--question-result-pane-wrapper--"]';
   // Google Material edit_note, Apache 2.0; see icons/LICENSE-material-icons.txt.
   const noteIcon = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor"><path d="M3,10h11v2H3V10z M3,8h11V6H3V8z M3,16h7v-2H3V16z M18.01,12.87l0.71-0.71c0.39-0.39,1.02-0.39,1.41,0l0.71,0.71 c0.39,0.39,0.39,1.02,0,1.41l-0.71,0.71L18.01,12.87z M17.3,13.58l-5.3,5.3V21h2.12l5.3-5.3L17.3,13.58z"/></svg>';
-  let host, shadow, current, trigger, pending = Promise.resolve(), writes = 0, failed = false, enabled = true, opening = 0;
+  let host, shadow, current, shownPrompt, targetPrompt, trigger, pending = Promise.resolve(), writes = 0, failed = false, enabled = true, opening = 0;
   const node = (tag, text) => { const element = document.createElement(tag); if (text) element.textContent = text; return element; };
   function mount() {
     if (host) return;
@@ -15,10 +15,11 @@
       :host{--surface:#fff;--ink:#20252c;--muted:#596574;--line:#c6d0dd;--accent:#285ea8;--selected:#dce9fc;color-scheme:light}
       :host([data-dark]){--surface:#20252b;--ink:#eef1f6;--muted:#bbc5d3;--line:#536071;--accent:#adcaff;--selected:#2a405d;color-scheme:dark}
       *{box-sizing:border-box}[hidden]{display:none!important}
-      section{width:min(390px,calc(100vw - 36px));padding:20px;background:var(--surface);color:var(--ink);font:14px/1.55 system-ui;border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 48px #0004;animation:enter 160ms ease-out}
+      section{width:min(420px,calc(100vw - 36px));max-height:calc(100dvh - 36px);overflow:auto;padding:20px;background:var(--surface);color:var(--ink);font:14px/1.55 system-ui;border:1px solid var(--line);border-radius:20px;box-shadow:0 12px 48px #0004;animation:enter 160ms ease-out}
       header{display:flex;justify-content:space-between;align-items:center;gap:12px}h2{font-size:17px;margin:0}p{color:var(--muted);margin:12px 0;font-size:12px}
       textarea,input{font:inherit;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;width:100%}
-      textarea{resize:vertical;min-height:150px;max-height:45dvh;height:230px;line-height:1.65}label{display:block;margin:10px 0;font-size:12px}input{padding:6px;width:80px;margin-left:8px}
+      #context{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      textarea{display:block;resize:vertical;min-height:100px;max-height:50dvh;height:clamp(140px,28dvh,260px);line-height:1.65;background:var(--selected);border-color:transparent}textarea:focus{background:var(--surface);border-color:var(--accent)}label{display:block;margin:10px 0 6px;font-size:12px}input{padding:6px;width:80px;margin-left:8px}
       button{font:inherit;border:0;border-radius:20px;padding:8px 12px;background:var(--selected);color:var(--accent);cursor:pointer}footer{display:flex;align-items:center;gap:10px;margin-top:8px}output{font-size:12px;color:var(--muted);flex:1}
       :focus-visible{outline:2px solid var(--accent);outline-offset:3px}@keyframes enter{from{opacity:0;transform:translateY(8px)}}@media(prefers-reduced-motion:reduce){section{animation:none}}
     </style><section role="region" aria-label="Question notes"><header><h2>Question notes</h2><button id="close" aria-label="Close notes">Close</button></header>
@@ -50,25 +51,28 @@
       failed = true; shadow.querySelector('#status').textContent = 'Not saved: ' + error.message;
     }).finally(() => { writes--; shadow.querySelector('#retry').hidden = !failed; });
   }
-  async function open(prompt, number, button) {
+  async function open(prompt, number, button, focus = true) {
     const request = ++opening;
+    targetPrompt = prompt;
     mount(); host.hidden = false; trigger = button;
-    await pending;
-    if (failed) { shadow.querySelector('#status').textContent = 'Save this note before opening another question. Retry save.'; return; }
     shadow.querySelector('#text').disabled = true;
+    await pending;
+    if (request !== opening) return;
+    if (failed) { targetPrompt = shownPrompt; shadow.querySelector('#text').disabled = false; shadow.querySelector('#status').textContent = 'Still showing the previous question: save this note before switching. Retry save.'; return; }
     try {
       const info = await StudyDockNotes.context(prompt, number);
       const record = await StudyDockNotes.read(info.key);
       if (request !== opening) return;
-      current = info;
+      current = info; shownPrompt = prompt;
       shadow.querySelector('h2').textContent = number ? `Question ${number} · Notes` : 'Question notes';
       shadow.querySelector('#context').textContent = info.preview;
       shadow.querySelector('#text').value = record?.text || '';
       shadow.querySelector('#number-label').hidden = !!number;
       shadow.querySelector('#number').value = record?.question_number || '';
       shadow.querySelector('#status').textContent = 'Saved in this browser · shared across attempts';
-      shadow.querySelector('#text').disabled = false; shadow.querySelector('#text').focus();
-    } catch (error) { current = null; shadow.querySelector('#text').disabled = true; shadow.querySelector('#status').textContent = error.message; }
+      shadow.querySelector('#text').disabled = false;
+      if (focus) shadow.querySelector('#text').focus();
+    } catch (error) { if (request !== opening) return; current = null; shownPrompt = null; shadow.querySelector('#text').disabled = true; shadow.querySelector('#status').textContent = error.message; }
     theme();
   }
   function theme() { host?.toggleAttribute('data-dark', document.documentElement.hasAttribute('data-study-dark')); }
@@ -76,7 +80,7 @@
     document.querySelectorAll('.studydock-note-button').forEach(button => button.hidden = !enabled);
     if (!enabled) { if (host) host.hidden = true; return; }
     for (const prompt of document.querySelectorAll(promptSelector)) {
-      if (prompt.nextElementSibling?.classList.contains('studydock-note-button')) continue;
+      if (prompt.nextElementSibling?.classList.contains('studydock-note-button')) { align(prompt, prompt.nextElementSibling); continue; }
       const button = node('button'); button.className = 'studydock-note-button'; button.type = 'button';
       button.innerHTML = noteIcon; button.append(document.createTextNode('Notes'));
       button.addEventListener('click', () => {
@@ -87,17 +91,26 @@
         void open(prompt, Number(heading.match(/Question\s+(\d+)/i)?.[1]) || null, button);
       });
       prompt.after(button);
+      align(prompt, button);
     }
     theme();
+  }
+  function align(prompt, button) {
+    if (!prompt.getClientRects().length || !button.getClientRects().length) return;
+    const base = button.getBoundingClientRect().left - parseFloat(getComputedStyle(button).marginLeft);
+    const textLeft = prompt.getBoundingClientRect().left + parseFloat(getComputedStyle(prompt).paddingLeft);
+    button.style.marginLeft = Math.max(0, textLeft - base) + 'px';
   }
   const style = node('style'); style.textContent = `
     .studydock-note-button{display:inline-flex;align-items:center;align-self:flex-start;justify-self:start;width:max-content!important;max-width:100%;gap:8px;margin:12px 0;padding:8px 14px;border:0;border-radius:20px;background:#dce9fc;color:#285ea8;font:500 14px system-ui;cursor:pointer}
     .studydock-note-button[hidden]{display:none!important}html[data-study-dark] .studydock-note-button{background:#2a405d!important;color:#c1d8fa!important}
     .studydock-note-button:focus-visible{outline:2px solid #81aeee;outline-offset:3px}
+    .studydock-note-button svg{display:block!important;flex:0 0 20px;width:20px!important;height:20px!important;margin:0!important;fill:currentColor!important}
   `; document.head.append(style);
   let timer;
   new MutationObserver(() => { clearTimeout(timer); timer = setTimeout(scan,120); }).observe(document.body,{childList:true,subtree:true});
   new MutationObserver(theme).observe(document.documentElement,{attributes:true,attributeFilter:['data-study-dark']});
+  window.addEventListener('resize', scan);
   chrome.storage.local.get({notesEnabled:true}).then(settings => { enabled = settings.notesEnabled; scan(); });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.notesEnabled) { enabled = changes.notesEnabled.newValue; scan(); }
@@ -107,5 +120,9 @@
     }
   });
   window.addEventListener('beforeunload', event => { if (writes || failed) { event.preventDefault(); event.returnValue = ''; } });
-  globalThis.StudyDockNoteUI = {open};
+  globalThis.StudyDockNoteUI = {open, follow(prompt, number, button) {
+    if (!host || host.hidden) return;
+    trigger = button;
+    if (targetPrompt !== prompt) void open(prompt, number, button, false);
+  }};
 })();

@@ -116,7 +116,8 @@ def check_browser():
           <div class="title">Your test is paused</div>Progress saved.
           <div class="ud-footer-btns"><button data-purpose="unpause-test">Resume test</button></div></div></div></div>
           </div></div><footer class="curriculum-item-footer--footer--abc" style="height:40px">
-          <button data-purpose="theatre-mode-toggle-button">Expanded view</button></footer>''')
+          <div><div class="popper-module--popper--fixture"><button aria-label="Settings"><svg viewBox="0 0 24 24"></svg></button></div>
+          <div class="popper-module--popper--fixture"><button data-purpose="theatre-mode-toggle-button" aria-label="Expanded view"><svg viewBox="0 0 24 24"></svg></button></div></div></footer>''')
         page.evaluate('''() => {
           window.uiSettings = {fullHeight:false, hidePause:false, keepRunning:false}; window.listeners=[]; window.resumes=0;
           window.chrome = {storage:{local:{get: async defaults => ({...defaults,...uiSettings}),
@@ -128,6 +129,9 @@ def check_browser():
         }''')
         page.evaluate((Path(__file__).parent / "extension/ui.js").read_text(encoding="utf-8"))
         page.wait_for_function("!!document.querySelector('#udemy-study-height-toggle')")
+        assert page.locator('[data-studydock-controls]').evaluate("node=>getComputedStyle(node).gap") == '6px'
+        assert page.get_by_role('button',name='Settings',exact=True).evaluate("node=>node.getBoundingClientRect().height") == 40
+        assert page.get_by_role('button',name='Expanded view',exact=True).evaluate("node=>node.getBoundingClientRect().left-document.querySelector('[aria-label=Settings]').getBoundingClientRect().right") == 6
         assert page.evaluate("resumes") == 0
         page.evaluate("chrome.storage.local.set({fullHeight:true,hidePause:true})")
         assert page.locator(".limiter").evaluate("e=>getComputedStyle(e).maxBlockSize") == "none"
