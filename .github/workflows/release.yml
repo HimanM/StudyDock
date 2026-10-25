@@ -65,10 +65,8 @@ jobs:
           path: |
             dist/*-setup.exe
             dist/*-portable.zip
-            dist/*-chrome.zip
             dist/*.dmg
             dist/*.bin
-            dist/SHA256SUMS-*.txt
           if-no-files-found: error
           retention-days: 14
   publish:

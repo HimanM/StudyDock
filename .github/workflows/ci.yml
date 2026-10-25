@@ -29,6 +29,8 @@ jobs:
       - if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y xvfb desktop-file-utils
       - run: python -m playwright install chrome
+      - name: Optional installer checks
+        run: python -X utf8 test_install.py
       - name: JavaScript syntax
         shell: bash
         run: for file in extension/*.js; do node --check "$file"; done

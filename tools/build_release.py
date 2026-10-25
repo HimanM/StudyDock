@@ -1,5 +1,4 @@
 """Build on the target OS: python tools/build_release.py. Never cross-compiles."""
-import hashlib
 import json
 from pathlib import Path
 import platform
@@ -58,17 +57,7 @@ def main():
         destination = output / f"{prefix}.bin"
         shutil.copy2(executable, destination)
         artifacts.append(destination)
-    # The extension remains a normal unpacked MV3 extension, installed separately in Chrome.
-    if sys.platform == "win32":
-        destination = output / f"StudyDock-{version}-chrome.zip"
-        with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:
-            for file in (ROOT / "extension").rglob("*"):
-                if file.is_file():
-                    archive.write(file, file.relative_to(ROOT))
-        artifacts.append(destination)
-    checksums = output / f"SHA256SUMS-{label}.txt"
-    checksums.write_text("".join(f"{hashlib.sha256(file.read_bytes()).hexdigest()}  {file.name}\n" for file in artifacts), encoding="utf-8")
-    print("\n".join(str(path) for path in artifacts + [checksums]))
+    print("\n".join(str(path) for path in artifacts))
 
 
 if __name__ == "__main__":

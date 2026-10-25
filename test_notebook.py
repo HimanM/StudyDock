@@ -8,7 +8,7 @@ ROOT = Path(__file__).parent
 MOCK = """() => {
   window.saved = {}; window.listeners = []; window.failSave = false;
   window.chrome = {
-    runtime: {getManifest:()=>({version:'1.4.2'}), openOptionsPage:async()=>{}, getURL:path=>path},
+    runtime: {getManifest:()=>({version:'1.4.3'}), openOptionsPage:async()=>{}, getURL:path=>path},
     storage: {local: {
       get:async keys => keys === null ? {...saved} : typeof keys === 'string' ? {[keys]:saved[keys]} : {...keys,...Object.fromEntries(Object.entries(saved).filter(([key])=>key in keys))},
       set:async values => { if(failSave && Object.keys(values).some(key=>key.startsWith('studydock.note.'))) throw Error('Storage unavailable');

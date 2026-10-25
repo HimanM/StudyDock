@@ -22,6 +22,8 @@ Review, notes and browser downloads need only the extension. Reviewing/exporting
 
 Download the matching package from [Releases](https://github.com/HimanM/Udemy-Study-Tools/releases). This repository is private: sign in with an account that has access. Packaged desktop apps include Python and Tk; you do not need to install Python separately.
 
+Release assets contain only the desktop application packages. The browser extension stays in this repository; there is no separate extension ZIP or checksum text-file download.
+
 | System | Package | Installation |
 | --- | --- | --- |
 | Windows 10/11, x64 | `windows-x64-setup.exe` | Run the installer. It installs for your account and adds Start-menu and desktop shortcuts. A portable ZIP is also available. |
@@ -31,22 +33,34 @@ Download the matching package from [Releases](https://github.com/HimanM/Udemy-St
 
 Linux builds target Ubuntu 22.04 or newer and compatible glibc desktop distributions. No Python, pip, virtual environment, FUSE, or separate app runtime installation is needed. A graphical desktop with its usual X11/XWayland system libraries is required. A single binary cannot cover incompatible CPU/libc families: Alpine/musl, older glibc, and Linux ARM are not covered. See [PyInstaller's Linux compatibility explanation](https://pyinstaller.org/en/stable/usage.html#making-gnu-linux-apps-forward-compatible).
 
-Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.2/StudyDock-1.4.2-linux-x64.bin) while signed into GitHub, then run from that download directory:
+Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.3/StudyDock-1.4.3-linux-x64.bin) while signed into GitHub, then run from that download directory:
 
 ```sh
-chmod +x StudyDock-1.4.2-linux-x64.bin
-./StudyDock-1.4.2-linux-x64.bin --install
+chmod +x StudyDock-1.4.3-linux-x64.bin
+./StudyDock-1.4.3-linux-x64.bin --install
 ```
 
 Omit `--install` to run it without installation. The installed binary and icon go under your user data directory. The Chrome setup button copies the bundled extension to a permanent folder, so Chrome never depends on a temporary unpacking directory. Some desktops require **Allow Launching** on a new desktop icon, or disable desktop icons entirely; the application-menu entry remains available. As a private GitHub release, this is not an anonymous `curl | sh` URL.
 
-The Windows and macOS packages are **unsigned**; no publisher certificate or Apple notarization credentials are configured. Windows may show SmartScreen, and macOS may require approval in System Settings → Privacy & Security after an attempted launch. Only open packages from this repository that you trust. Checksums accompany each release.
+The Windows and macOS packages are **unsigned**; no publisher certificate or Apple notarization credentials are configured. Windows may show SmartScreen, and macOS may require approval in System Settings → Privacy & Security after an attempted launch. Only open packages from this repository that you trust. GitHub provides [SHA-256 digests for release assets](https://docs.github.com/en/rest/releases/assets); the optional installer verifies its download against that digest.
+
+### Optional Python installer
+
+If Python 3.9+ is already available, download [install.py](install.py) using GitHub's **Download raw file** button, then run:
+
+```sh
+python3 install.py
+```
+
+On Windows, use `py install.py`. No pip packages are needed. The script downloads the latest packaged app for your OS/CPU, verifies its SHA-256 digest, and installs it. Linux gets the app-menu and desktop shortcuts; Windows opens the normal setup wizard; macOS installs to `~/Applications/StudyDock.app`. Close StudyDock before upgrading.
+
+Since the repository is private, the script reads `GH_TOKEN` or `GITHUB_TOKEN`, or asks for a token in a hidden terminal prompt. Use a token with read-only **Contents** access to this repository. The token is not saved or passed to the downloaded installer. Browser downloads do not require a token. Python is needed only to run this optional installer; the installed app runs independently.
 
 ### Chrome companion
 
-1. Download and extract the release's `chrome.zip` into a permanent folder.
+1. Use the desktop app's **Chrome setup** button to find the bundled extension, or download this repository with **Code → Download ZIP** and extract it into a permanent folder.
 2. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**.
-3. Choose the extracted `extension` folder. Pin **StudyDock** from Chrome's Extensions menu.
+3. Choose the `extension` folder. Pin **StudyDock** from Chrome's Extensions menu.
 4. Open a completed test attempt in Udemy and select **Review questions**.
 
 The extension is installed locally; it is not published to the Chrome Web Store. Your existing Udemy login stays in Chrome. The desktop app's **Chrome setup** button can also show/copy the bundled extension path.
@@ -167,12 +181,13 @@ python -m playwright install chrome
 python test_extractor.py
 python test_review.py
 python test_notebook.py
+python test_install.py
 ```
 
 Linux headless checks need `xvfb-run -a python test_extractor.py`. Pass `--screenshots` to the review or notebook tests to write synthetic previews under `.dev-previews/`. Tests cover exports/authentication, desktop preferences/platform paths, review navigation, image viewer, native-theme contrast/restoration, notes and save failures, browser downloads, settings, connection states, and mobile/reduced-motion behavior. Screenshots contain synthetic fixtures, not personal exports.
 
 - **Checks workflow:** tests Windows, Linux, macOS Apple Silicon, and macOS Intel on pushes/PRs.
-- **Release workflow:** on a `v*` tag, runs the checks, verifies the tag matches `extension/manifest.json`, builds on each target OS, smoke-tests the bundles, validates Linux installation/launchers and the Windows installer, then publishes packages and SHA-256 checksums only if every job succeeds.
+- **Release workflow:** on a `v*` tag, runs the checks, verifies the tag matches `extension/manifest.json`, builds on each target OS, smoke-tests the bundles, validates Linux installation/launchers and the Windows installer, then publishes only desktop packages if every job succeeds. GitHub supplies the asset SHA-256 digests.
 - **Manual release workflow:** builds test artifacts without publishing a release when run from a branch.
 - **Local build:** `python tools/build_release.py` on the target OS. Windows needs Inno Setup 6; macOS uses `hdiutil`; Linux needs a display or Xvfb. PyInstaller does not cross-compile.
 
