@@ -26,7 +26,7 @@ async function extract(command) {
   let result;
   try {
     const tab = await chrome.tabs.get(command.tab_id);
-    if (!/^https:\/\/([\w-]+\.)?udemy\.com\//.test(tab.url || "")) throw new Error("Select an open Udemy results tab.");
+    if (!/^https:\/\/(?:(?:[\w-]+\.)?udemy\.com|portal\.tutorialsdojo\.com)\//.test(tab.url || "")) throw new Error("Select an open Udemy results tab or Tutorials Dojo results popup.");
     if (tab.discarded || tab.status === "loading") {
       if (tab.discarded) await chrome.tabs.update(tab.id, {active: true});
       await new Promise((resolve, reject) => {
@@ -43,11 +43,13 @@ async function extract(command) {
         void chrome.tabs.get(tab.id).then(current => { if (!current.discarded && current.status === "complete") finish(); }, finish);
       });
     }
-    const injected = await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ["notes-store.js", "extractor.js"]});
-    if (!injected[0]?.result) throw new Error("Udemy returned no data. Reload the results tab and retry.");
-    result = {id: command.id, data: injected[0].result};
+    const injected = await chrome.scripting.executeScript({target: {tabId: tab.id}, files: new URL(tab.url).hostname === "portal.tutorialsdojo.com" ? ["review-content.js", "dojo.js", "dojo-extractor.js"] : ["review-content.js", "notes-store.js", "extractor.js"]});
+    if (!injected[0]?.result) throw new Error("The page returned no data. Reload the results tab and retry.");
+    const data = injected[0].result;
+    if (data.error) throw Error(data.error);
+    result = {id: command.id, data};
   } catch (error) {
-    const hint = /Cannot access contents/.test(error.message) ? " Open this tab, reload it, and allow the extension access to Udemy, then retry." : "";
+    const hint = /Cannot access contents/.test(error.message) ? " Open this tab, reload it, and allow the extension access to this site, then retry." : "";
     result = {id: command.id, error: error.message + hint};
   }
   // Keep completed results until the app acknowledges them; never silently drop an export.
@@ -64,12 +66,12 @@ async function poll() {
   try {
     if (!token) token = (await request("/hello")).token;
     const groups = await chrome.tabGroups.query({});
-    const tabs = (await chrome.tabs.query({url: ["https://*.udemy.com/*"]})).map(tab => ({
+    const tabs = (await chrome.tabs.query({url: ["https://*.udemy.com/*", "https://portal.tutorialsdojo.com/courses/*"]})).map(tab => ({
       id: tab.id, title: tab.title, url: tab.url,
       group: groups.find(group => group.id === tab.groupId)?.title || "Ungrouped"
     }));
     const response = await request("/poll", {tabs, busy});
-    document.getElementById("status").textContent = `Connected · ${tabs.length} Udemy tab(s) available${busy ? " · Reading questions…" : ""}`;
+    document.getElementById("status").textContent = `Connected · ${tabs.length} study tab(s) available${busy ? " · Reading questions…" : ""}`;
     document.getElementById("error-details").hidden = true;
     if (response.command && !busy) void extract(response.command);
     connected = true;

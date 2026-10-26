@@ -5,9 +5,9 @@
     const result = structuredClone(data);
     result.schema_version = 1; result.exported_at = new Date().toISOString(); result.mode = full ? 'full' : 'questions_and_answers';
     if (!full) for (const question of result.questions) {
-      for (const key of ['correct_answers','is_correct','status','explanation']) delete question[key];
+      for (const key of ['correct_answers','is_correct','status','explanation','explanation_html']) delete question[key];
       question.tags = (question.tags || []).filter(tag => tag === 'marked_for_review');
-      for (const option of question.options) { delete option.correct; delete option.explanation; }
+      for (const option of question.options) { delete option.correct; delete option.explanation; delete option.explanation_html; }
     }
     return result;
   }
@@ -16,14 +16,15 @@
       `Part ${data.part} of ${data.parts} · ${data.questions.length} questions`, ''];
     for (const warning of data.warnings || []) lines.push('> ' + warning, '');
     for (const q of data.questions) {
-      lines.push(`## Question ${q.number}`, '', `Marked for review: **${q.marked_for_review ? 'Yes' : 'No'}**`, `Tags: ${(q.tags || []).join(', ') || 'none'}`, '', q.question, '', '### Answer choices', '');
+      lines.push(`## Question ${q.number}`, '', `Marked for review: **${q.marked_for_review == null ? 'Unknown' : q.marked_for_review ? 'Yes' : 'No'}**`, `Tags: ${(q.tags || []).join(', ') || 'none'}`, '', q.question, '', '### Answer choices', '');
+      if (q.source_number) lines.push(`Category question: ${q.source_number} · ${q.domain || ''}`, '');
       for (const option of q.options) {
         const badges = [option.selected ? 'your answer' : '', option.correct ? 'correct answer' : ''].filter(Boolean);
         lines.push(`**${option.label}.** ${option.text}${badges.length ? ' — **' + badges.join(', ') + '**' : ''}`, '');
         if (option.explanation) lines.push('Explanation: ' + option.explanation, '');
       }
-      lines.push(`Your answer(s): ${q.selected_answers.join(', ') || 'None'}`);
-      if ('correct_answers' in q) lines.push(`Correct answer(s): ${q.correct_answers.join(', ')}`, `Result: ${q.status}`, '', '### Explanation', '', q.explanation || 'Not provided by this page.');
+      lines.push(`Your answer(s): ${q.selected_answers == null ? 'Unknown' : q.selected_answers.join(', ') || 'None'}`);
+      if ('correct_answers' in q) lines.push(`Correct answer(s): ${q.correct_answers == null ? 'Unknown' : q.correct_answers.join(', ')}`, `Result: ${q.status}`, '', '### Explanation', '', q.explanation || 'Not provided by this page.');
       if (q.notes?.text) lines.push('', '### Your notes', '', q.notes.text);
       if (q.domain) lines.push('', 'Domain: ' + q.domain);
       lines.push('', '---', '');
@@ -50,7 +51,7 @@
   }
   function downloadLink(file) {
     const link = document.createElement('a'); link.download = file.name; link.textContent = file.name;
-    link.href = URL.createObjectURL(new Blob([file.text], {type:file.name.endsWith('.json') ? 'application/json' : 'text/markdown;charset=utf-8'}));
+    link.href = URL.createObjectURL(new Blob([file.text], {type:file.name.endsWith('.json') ? 'application/json' : file.name.endsWith('.html') ? 'text/html;charset=utf-8' : 'text/markdown;charset=utf-8'}));
     return link;
   }
   globalThis.StudyDockExport = {prepare, markdown, chunks, notesFile, downloadLink};

@@ -1,26 +1,28 @@
 # StudyDock
 
-A Chrome extension for Udemy practice exams, question notes and focused review, with an optional desktop exporter. Read one question at a time, inspect explanations and diagrams, and export Markdown or JSON batches for study notes.
+A Chrome extension for Udemy and Tutorials Dojo practice exams, question notes and focused review, with an optional desktop exporter. Read one question at a time, inspect explanations and diagrams, and export Markdown, JSON or portable HTML batches for study notes.
 
 ![Focused review in dark mode](docs/focus-review.png)
 
 ## What it does
 
+- **Tutorials Dojo:** read completed View results popups, including selected/correct answers, wrong/skipped states, independent review marks and full explanations. The same focused review and HTML exports work on both platforms.
 - **Focused review:** one question, a separate resizable explanation pane, All / Correct / Wrong / Marked filters, and a collapsible question-number tray.
 - **Diagrams:** open images, zoom, pan, fit, and close without losing your place.
 - **Consistent appearance:** light/dark themes, Material icons, comfortable reading widths, and short transitions that respect reduced-motion preferences.
 - **Native Udemy dark mode:** themes neutral surfaces and text on the original page, including hard-coded white cards. Colored charts and media retain their original colors.
 - **Exam controls:** full-height view, optional pause-overlay removal, and optional auto-resume.
 - **Question notes:** write beside an exam question or in focused review. Notes save locally in Chrome and join matching questions in exports.
-- **Browser exports:** export completed tests or just your notes without running the desktop app. Choose Markdown/JSON and question batches of 5 or more, or All; default 20.
+- **Browser exports:** export completed tests or just your notes without running the desktop app. Choose Markdown, JSON or HTML and question batches of 5 or more, or All; default 20.
 - **Settings:** hide desktop integration and the extra full-height shortcut, enable/disable notes, and choose appearance and exam behavior. Creator/source links live here.
+- **Portable HTML:** the same focused review UI in a saved file, named after the exam. Filters, explanations, keyboard controls, diagrams and saved notes use the shared renderer. Questions and explanations work offline; linked images and reference links need internet. No installed app is needed to open the HTML.
 - **Optional desktop exports:** select multiple Chrome tabs and save batches directly to your chosen folder.
 
 Review, notes and browser downloads need only the extension. Reviewing/exporting never answers questions, changes review marks, or submits/retakes a test. Auto-resume is a separate opt-in setting that operates Udemy's Resume control.
 
 ## Install
 
-Download the matching package from [Releases](https://github.com/HimanM/Udemy-Study-Tools/releases). This repository is private: sign in with an account that has access. Packaged desktop apps include Python and Tk; you do not need to install Python separately.
+Download the matching package from [Releases](https://github.com/HimanM/Udemy-Study-Tools/releases). Packaged desktop apps include Python and Tk; you do not need to install Python separately.
 
 Release assets contain only the desktop application packages. Download the [extension-only ZIP](https://udemystudytool.himanm.com/downloads/StudyDock-extension.zip) separately from the website. GitHub Actions packages the extension files for GitHub Pages; the ZIP contains no desktop application or repository source outside the extension.
 
@@ -33,14 +35,14 @@ Release assets contain only the desktop application packages. Download the [exte
 
 Linux builds target Ubuntu 22.04 or newer and compatible glibc desktop distributions. No Python, pip, virtual environment, FUSE, or separate app runtime installation is needed. A graphical desktop with its usual X11/XWayland system libraries is required. A single binary cannot cover incompatible CPU/libc families: Alpine/musl, older glibc, and Linux ARM are not covered. See [PyInstaller's Linux compatibility explanation](https://pyinstaller.org/en/stable/usage.html#making-gnu-linux-apps-forward-compatible).
 
-Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.3/StudyDock-1.4.3-linux-x64.bin) while signed into GitHub, then run from that download directory:
+Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.4.3/StudyDock-1.4.3-linux-x64.bin), then run from that download directory:
 
 ```sh
 chmod +x StudyDock-1.4.3-linux-x64.bin
 ./StudyDock-1.4.3-linux-x64.bin --install
 ```
 
-Omit `--install` to run it without installation. The installed binary and icon go under your user data directory. The Chrome setup button copies the bundled extension to a permanent folder, so Chrome never depends on a temporary unpacking directory. Some desktops require **Allow Launching** on a new desktop icon, or disable desktop icons entirely; the application-menu entry remains available. As a private GitHub release, this is not an anonymous `curl | sh` URL.
+Omit `--install` to run it without installation. The installed binary and icon go under your user data directory. The Chrome setup button copies the bundled extension to a permanent folder, so Chrome never depends on a temporary unpacking directory. Some desktops require **Allow Launching** on a new desktop icon, or disable desktop icons entirely; the application-menu entry remains available.
 
 The Windows and macOS packages are **unsigned**; no publisher certificate or Apple notarization credentials are configured. Windows may show SmartScreen, and macOS may require approval in System Settings → Privacy & Security after an attempted launch. Only open packages from this repository that you trust. GitHub provides [SHA-256 digests for release assets](https://docs.github.com/en/rest/releases/assets); the optional installer verifies its download against that digest.
 
@@ -54,14 +56,22 @@ python3 install.py
 
 On Windows, use `py install.py`. No pip packages are needed. The script downloads the latest packaged app for your OS/CPU, verifies its SHA-256 digest, and installs it. Linux gets the app-menu and desktop shortcuts; Windows opens the normal setup wizard; macOS installs to `~/Applications/StudyDock.app`. Close StudyDock before upgrading.
 
-Since the repository is private, the script reads `GH_TOKEN` or `GITHUB_TOKEN`, or asks for a token in a hidden terminal prompt. Use a token with read-only **Contents** access to this repository. The token is not saved or passed to the downloaded installer. Browser downloads do not require a token. Python is needed only to run this optional installer; the installed app runs independently.
+Public releases download without a token. If authentication is needed, the script can read `GH_TOKEN` or `GITHUB_TOKEN`, or ask for a token in a hidden terminal prompt. Use a token with read-only **Contents** access to this repository. The token is not saved or passed to the downloaded installer. Browser downloads do not require a token. Python is needed only to run this optional installer; the installed app runs independently.
 
 ### Chrome companion
 
 1. Download the [extension-only ZIP](https://udemystudytool.himanm.com/downloads/StudyDock-extension.zip) and extract it into a permanent folder, or use the desktop app's **Chrome setup** button to find its bundled extension.
 2. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**.
 3. Choose the extracted folder containing `manifest.json` (or the desktop app's `extension` folder). Pin **StudyDock** from Chrome's Extensions menu.
-4. Open a completed test attempt in Udemy and select **Review questions**.
+4. In Udemy, open a completed attempt and select **Review questions**. In Tutorials Dojo, open the course page and choose a completed attempt’s **View results** icon, then choose **Focus review**.
+
+### Tutorials Dojo results
+
+Open the completed attempt's **View results** popup before selecting that course tab in Notebook & exports or the desktop app. Export one open attempt at a time; switch the result popup to export another attempt. StudyDock reads all loaded questions even if Dojo's category or correctness filters hide some of them. The **View** links reveal answer/explanation rows that the popup has already loaded; extraction does not need to open a quiz or change answers.
+
+Correctness comes from Dojo's result columns and answer classes, selected choices from checked inputs, and review marks from the same `reviewFlagged` state used by Dojo's filter. Explanations are retained as content, regardless of how the author orders or phrases the correct answer. Missing answers/explanations or inconsistent totals stop the export.
+
+Dojo sorts results by category and restarts question numbers within each category. StudyDock assigns unique review numbers in that displayed order, preserves the category-local number as `source_number`, and includes a numbering notice. These are not the original randomized exam positions. English-language multiple-choice and multiple-select completed result tables are supported. Unsupported answer types stop with an error; they are never silently omitted. Udemy's exam controls and editable question notes remain Udemy features.
 
 The extension is installed locally; it is not published to the Chrome Web Store. Your existing Udemy login stays in Chrome. The desktop app's **Chrome setup** button can also show/copy the bundled extension path.
 

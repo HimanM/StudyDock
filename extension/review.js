@@ -7,7 +7,9 @@
   const rich = '[data-purpose="safely-set-inner-html:rich-text-viewer:html"]';
   const text = node => (node?.textContent || "").replace(/\s+/g, " ").trim();
   const all = (selector, root = document) => [...root.querySelectorAll(selector)];
-  const isReview = () => /\/learn\/quiz\/\d+\/results?(?:\/|$)/.test(location.pathname);
+  const source = globalThis.StudyDockReviewSource;
+  const storage = globalThis.chrome?.storage;
+  const isReview = () => source ? source.ready() : /\/learn\/quiz\/\d+\/results?(?:\/|$)/.test(location.pathname);
   let settings = {...defaults}, host, shadow, questions = [], active = 0, filter = "all";
   let dismissed = "", path = location.pathname, loading = false, timer;
   let rememberedFocus = null, viewer = null, pendingRender = false;
@@ -134,7 +136,7 @@
     @media(prefers-reduced-motion:reduce) {* {transition:none!important;animation:none!important;scroll-behavior:auto!important}}
   `;
 
-  function save(values) { Object.assign(settings, values); void chrome.storage.local.set(values); }
+  function save(values) { Object.assign(settings, values); void storage?.local.set(values); }
   function el(tag, className, content) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -161,7 +163,7 @@
       node.animate(frames, {duration: 180, easing: "cubic-bezier(.2,0,0,1)"});
     }
   }
-  function safeURL(value) { try { const u = new URL(value, location.href); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } }
+  function safeURL(value) { if (source?.offline && /^data:image\/(png|jpeg|gif|webp|avif);base64,[a-z0-9+/=\s]+$/i.test(value || "")) return value; try { const u = new URL(value, location.href); return /^https?:$/.test(u.protocol) ? u.href : ""; } catch { return ""; } }
   function copyRich(source) {
     const result = el("div", "rich");
     if (!source) return result;
@@ -309,6 +311,12 @@
     const launch = document.getElementById("udemy-study-review-launch");
     if (launch) { launch.textContent = "Preparing review…"; launch.disabled = true; }
     try {
+      if (source) {
+        questions = await source.read();
+        if (!questions.length || new Set(questions.map(q => q.number)).size !== questions.length) throw Error("The result contains missing or duplicate questions.");
+        if (!source.ready()) return;
+        active = 0; filter = "all"; mount(); return;
+      }
       let filters = document.querySelector('[class*="revamped-result-page--filter-area--"]');
       if (!filters) throw Error("Open Review questions in Udemy first.");
       const allDomain = all("li button", filters).find(node => text(node) === "All domains");
@@ -387,7 +395,7 @@
     const workspace = el("section", "workspace"); workspace.setAttribute("aria-label", "Focused practice test review"); shadow.append(workspace);
     const top = el("header", "top"), heading = el("div", "heading");
     heading.append(el("div", "brand", "Review"),
-      el("div", "title", text(document.querySelector('[class*="results-header--title--"]')) || document.title.replace(/ \| Udemy$/, "")));
+      el("div", "title", source?.title() || text(document.querySelector('[class*="results-header--title--"]')) || document.title.replace(/ \| Udemy$/, "")));
     top.append(heading); const controls = el("div", "controls");
     const control = (label, name, key, action, pressed) => {
       const node = iconButton(label, name, action); node.dataset.control = key;
@@ -420,7 +428,9 @@
     for (const [key, label] of [["← →", "Previous / next question"], ["E", "Show / hide explanation"], ["Esc", "Close image / original view"]]) {
       const line = el("div"); line.append(el("kbd", "", key), document.createTextNode(label)); help.append(line);
     }
-    menuContent.append(side, help); menu.append(summary, menuContent); controls.append(menu);
+    menuContent.append(side, help);
+    if (source?.notice) menuContent.append(el("p", "shortcut-help", source.notice));
+    menu.append(summary, menuContent); controls.append(menu);
     control("Original view", "close", "exit", () => { dismissed = location.pathname; closeReview(); sync(); });
     top.append(controls); workspace.append(top);
     const toolbar = el("div", "toolbar"), filters = el("nav", "filters"); filters.setAttribute("aria-label", "Filter questions");
@@ -442,18 +452,19 @@
       content.append(el("h1", "", "No questions match this filter"), el("p", "empty", "Try All questions, or select any number below."));
     } else {
       const eyebrow = el("div", "eyebrow");
-      const status = el("span", `status ${q.status}`, q.status === "correct" ? "Correct" : q.status === "incorrect" ? "Wrong" : "Unanswered");
+      const status = el("span", `status ${q.status}`, q.status === "correct" ? "Correct" : q.status === "incorrect" ? "Wrong" : q.status === "unknown" ? "Result unavailable" : "Unanswered");
       status.prepend(icon(q.status === "correct" ? "check" : q.status === "incorrect" ? "close" : "minus")); eyebrow.append(status);
+      if (q.marked == null) eyebrow.append(el("span", "", "Review mark unavailable"));
       if (q.marked) { const marked = el("span", "marked", "Marked"); marked.prepend(icon("mark")); eyebrow.append(marked); }
       const title = el("h1", "", `Question ${q.number}`); title.tabIndex = -1;
       content.append(eyebrow, title);
-      if (q.domain) content.append(el("p", "domain", q.domain));
+      if (q.domain) content.append(el("p", "domain", q.domain + (q.sourceNumber ? ` · Category question ${q.sourceNumber}` : "")));
       const prompt = copyRich(q.prompt); prompt.classList.add("prompt"); content.append(prompt);
       q.options.forEach((option, i) => {
-        const row = el("div", `option ${option.correct ? "correct" : option.selected ? "wrong" : ""}`);
+        const row = el("div", `option ${option.correct ? "correct" : option.selected && option.correct === false ? "wrong" : ""}`);
         row.append(el("span", "letter", String.fromCharCode(65 + i)));
         const body = el("div", "option-body");
-        if (option.selected || option.correct) body.append(el("div", "option-label", option.selected ? `Your answer · ${option.correct ? "Correct" : "Incorrect"}` : "Correct answer"));
+        if (option.selected || option.correct) body.append(el("div", "option-label", option.selected ? `Your answer${option.correct == null ? "" : option.correct ? " · Correct" : " · Incorrect"}` : "Correct answer"));
         body.append(copyRich(option.body)); row.append(body); content.append(row);
       });
     }
@@ -483,7 +494,9 @@
       if (!option.reasons.length) return;
       const details = el("details"); details.append(el("summary", "", `Choice ${String.fromCharCode(65 + i)} explanation`));
       option.reasons.forEach(reason => details.append(copyRich(reason))); exp.append(details);
-    }); explanation.append(exp); panes.append(explanation);
+    });
+    if (q.notes?.text && !globalThis.StudyDockNoteUI) { const note = el("details"); note.append(el("summary", "", "Your saved notes"),el("p", "", q.notes.text)); exp.append(note); }
+    explanation.append(exp); panes.append(explanation);
     const notesPanel = el('div','notes-panel'), notesSlot = el('slot'); notesSlot.name = 'notes'; notesPanel.append(notesSlot); panes.append(notesPanel);
     workspace.append(panes);
     const bottom = el("footer", "bottom"), nav = el("div", "nav-line"), paging = el("div", "controls");
@@ -529,7 +542,7 @@
   const dirtyThemeNodes = new Set();
   let themeFrame;
   function scheduleTheme() {
-    if (!themeFrame && settings.darkMode) themeFrame = requestAnimationFrame(() => { themeFrame = null; themeNativePage(); });
+    if (!source && !themeFrame && settings.darkMode) themeFrame = requestAnimationFrame(() => { themeFrame = null; themeNativePage(); });
   }
   function themeNativePage() {
     if (!settings.darkMode) {
@@ -603,8 +616,8 @@
     }
   }
   function applyTheme() {
-    document.documentElement.toggleAttribute("data-study-dark", !!settings.darkMode); host?.toggleAttribute("data-dark", !!settings.darkMode);
-    themeNativePage();
+    document.documentElement.toggleAttribute("data-study-dark", !source && !!settings.darkMode); host?.toggleAttribute("data-dark", !!settings.darkMode);
+    if (!source) themeNativePage();
     const toggle = shadow?.querySelector('[data-control="theme"]');
     if (toggle) { toggle.replaceChildren(icon(settings.darkMode ? "sun" : "moon"));
       toggle.title = settings.darkMode ? "Light mode" : "Dark mode"; toggle.setAttribute("aria-label", toggle.title); }
@@ -615,16 +628,16 @@
     applyTheme();
     if (!isReview() || !settings.focusReview) closeReview();
     let launch = document.getElementById("udemy-study-review-launch");
-    if (!isReview() || !document.querySelector(wrapper)) { launch?.remove(); return; }
+    if (!isReview() || (!source && !document.querySelector(wrapper))) { launch?.remove(); return; }
     if (!launch) {
       launch = button("Focus review", () => { save({focusReview: true}); dismissed = ""; void openReview(); });
       launch.id = "udemy-study-review-launch"; document.body.append(launch);
     }
     if (host && !questions[active]?.node.isConnected) { dismissed = path; closeReview(); }
-    if (settings.focusReview && !host && dismissed !== path) void openReview();
+    if (settings.focusReview && !host && dismissed !== path && (!source || source.autoOpen)) void openReview();
   }
   const schedule = () => { clearTimeout(timer); timer = setTimeout(sync, 120); };
-  chrome.storage.onChanged.addListener((changes, area) => {
+  storage?.onChanged.addListener((changes, area) => {
     if (area !== "local" || !Object.keys(changes).some(key => key in defaults)) return;
     const changed = Object.keys(changes).filter(key => key in defaults && settings[key] !== changes[key].newValue);
     for (const key of Object.keys(defaults)) if (changes[key]) settings[key] = changes[key].newValue ?? defaults[key];
@@ -649,7 +662,7 @@
     }
   });
   new MutationObserver(records => {
-    for (const record of records) if (record.type === 'attributes') {
+    for (const record of records) if (!source && record.type === 'attributes') {
       const root = record.target.matches('input') ? record.target.closest('label') || record.target.parentElement : record.target;
       for (const node of [root,...root.querySelectorAll('*')]) {
         dirtyThemeNodes.add(node);
@@ -660,7 +673,7 @@
   }).observe(document.body, {subtree: true, childList: true, attributes:true, attributeFilter:['class','style','checked','data-checked','aria-checked','aria-selected','disabled']});
   // Hover, focus and input.checked can change CSS without a DOM attribute mutation.
   for (const type of ['pointerover','pointerout','focusin','focusout','change']) document.addEventListener(type, event => {
-    if (!settings.darkMode || !(event.target instanceof Element) || event.target.closest('#udemy-study-review,#studydock-notes')) return;
+    if (source || !settings.darkMode || !(event.target instanceof Element) || event.target.closest('#udemy-study-review,#studydock-notes')) return;
     const root = event.target.closest('label,button,a,[role=option],[role=radio],[role=checkbox],[data-purpose=answer]') || event.target;
     if (root === document.body || root === document.documentElement) return;
     for (const node of root.querySelectorAll('*')) dirtyThemeNodes.add(node);
@@ -669,6 +682,6 @@
   }, true);
   window.addEventListener("popstate", schedule);
   setInterval(() => { if (path !== location.pathname) sync(); }, 1000);
-  globalThis.udemyStudyReview = async () => { settings = await chrome.storage.local.get(defaults); sync(); };
+  globalThis.udemyStudyReview = async () => { settings = storage ? await storage.local.get(defaults) : {...defaults}; sync(); };
   void globalThis.udemyStudyReview();
 })();

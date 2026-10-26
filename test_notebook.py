@@ -63,6 +63,7 @@ def main():
         page.locator('[data-purpose=answer-body]').first.evaluate("node=>node.textContent='Different choice'")
         assert page.evaluate("async()=> (await StudyDockNotes.context(document.querySelector('#question-prompt'),1)).key") != key
         page.locator('[data-purpose=answer-body]').first.evaluate("node=>node.innerHTML=node.dataset.original")
+        inject(page,'review-content.js')
         data = inject(page,'extractor.js')
         assert 'error' not in data, data
         assert data['questions'][0]['notes']['text'] == 'A revised note'

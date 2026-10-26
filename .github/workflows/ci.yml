@@ -44,3 +44,7 @@ jobs:
         run: python -X utf8 test_review.py
       - name: Browser notebook and settings
         run: python -X utf8 test_notebook.py
+      - name: Shared portable review
+        run: python -X utf8 test_portable_review.py
+      - name: Tutorials Dojo result parser
+        run: python -X utf8 test_dojo.py

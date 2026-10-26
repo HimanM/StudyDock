@@ -1,4 +1,4 @@
-"""Local Udemy study exporter. Python 3.10+; no third-party packages."""
+"""Local StudyDock exporter. Python 3.10+; no third-party packages."""
 from __future__ import annotations
 
 import copy
@@ -108,15 +108,15 @@ def prepare_export(data, full=True):
     if data.get("error"):
         raise ValueError(data["error"])
     result = {key: copy.deepcopy(data[key]) for key in
-              ("title", "url", "quiz_id", "attempt", "expected_count", "warnings") if key in data}
+              ("title", "url", "quiz_id", "attempt", "date", "platform", "expected_count", "warnings") if key in data}
     result.update(schema_version=1, exported_at=datetime.now(timezone.utc).isoformat(),
                   mode="full" if full else "questions_and_answers", questions=[])
     for question in data["questions"]:
         if not isinstance(question, dict) or not question.get("question") or not question.get("options"):
             raise ValueError("An incomplete question was found. No files were written for this tab.")
-        fields = ["number", "question", "selected_answers", "marked_for_review", "tags", "domain", "notes"]
+        fields = ["number", "source_number", "question", "question_html", "selected_answers", "marked_for_review", "tags", "domain", "notes"]
         if full:
-            fields += ["correct_answers", "is_correct", "status", "explanation"]
+            fields += ["correct_answers", "is_correct", "status", "explanation", "explanation_html"]
         item = {key: copy.deepcopy(question[key]) for key in fields if key in question}
         if "notes" in item:
             note = item["notes"]
@@ -124,8 +124,8 @@ def prepare_export(data, full=True):
                 raise ValueError("Invalid question notes. No files were written for this tab.")
             item["notes"] = {key: note[key] for key in ("text", "updated_at") if key in note}
         item["options"] = [{key: option[key] for key in
-                            (["label", "text", "selected", "correct", "explanation"] if full else
-                             ["label", "text", "selected"]) if key in option}
+                            (["label", "text", "text_html", "selected", "correct", "explanation", "explanation_html"] if full else
+                             ["label", "text", "text_html", "selected"]) if key in option}
                            for option in question["options"]]
         # Result tags must follow the same no-answer-key rule as the fields above.
         if not full:
@@ -148,6 +148,8 @@ def markdown(data):
         marked = {True: "Yes", False: "No", None: "Unknown"}[q.get("marked_for_review")]
         lines += [f"## Question {q['number']}", "", f"Marked for review: **{marked}**",
                   f"Tags: {', '.join(q.get('tags', [])) or 'none'}", "", q["question"], "", "### Answer choices", ""]
+        if q.get("source_number"):
+            lines += [f"Category question: {q['source_number']} · {q.get('domain', '')}", ""]
         for option in q["options"]:
             badges = []
             if option.get("selected"):
@@ -173,8 +175,8 @@ def markdown(data):
 
 
 def write_export(data, folder, fmt, limit, full=True):
-    if fmt not in ("json", "md"):
-        raise ValueError("Choose JSON or Markdown.")
+    if fmt not in ("json", "md", "html"):
+        raise ValueError("Choose JSON, Markdown or offline HTML.")
     limit = chunk_limit("All" if limit is None else limit)
     data = prepare_export(data, full)
     total = len(data["questions"])
@@ -189,8 +191,14 @@ def write_export(data, folder, fmt, limit, full=True):
     for index, start in enumerate(range(0, total, size), 1):
         part = {**data, "part": index, "parts": parts, "total_questions": total,
                 "questions": data["questions"][start:start + size]}
-        content = json.dumps(part, indent=2, ensure_ascii=False) if fmt == "json" else markdown(part)
-        path = destination / f"questions_{start + 1:03d}-{min(start + size, total):03d}.{fmt}"
+        if fmt == "html":
+            from portable_review import render, filename
+            content = render(part, ROOT / "extension")
+            name = filename(data.get("title")) + (f" - part {index}" if parts > 1 else "") + ".html"
+        else:
+            content = json.dumps(part, indent=2, ensure_ascii=False) if fmt == "json" else markdown(part)
+            name = f"questions_{start + 1:03d}-{min(start + size, total):03d}.{fmt}"
+        path = destination / name
         pending = path.with_suffix(".tmp")
         pending.write_text(content + "\n", encoding="utf-8")
         pending.replace(path)
@@ -374,7 +382,7 @@ class App(tk.Tk):
             "Questions & your answers", "Questions, answers, correct answers & explanations")).grid(row=0, column=1, columnspan=3, sticky="ew")
         ttk.Label(options, text="File format").grid(row=1, column=0, sticky="w", pady=10)
         ttk.Combobox(options, textvariable=self.format, state="readonly", width=20,
-                     values=("Markdown (.md)", "JSON (.json)")).grid(row=1, column=1, sticky="w")
+                     values=("Markdown (.md)", "JSON (.json)", "Offline review (.html)")).grid(row=1, column=1, sticky="w")
         ttk.Label(options, text="Questions per file").grid(row=1, column=2, padx=15)
         ttk.Combobox(options, textvariable=self.limit, width=10,
                      values=("5", "10", "15", "20", "25", "30", "50", "All")).grid(row=1, column=3, sticky="w")
@@ -458,7 +466,7 @@ class App(tk.Tk):
 
     def tick(self):
         connected = time.monotonic() - self.bridge.last_seen < 40
-        self.status.set(f"Chrome connected · {len(self.bridge.tabs)} Udemy tabs" if connected else
+        self.status.set(f"Chrome connected · {len(self.bridge.tabs)} study tabs" if connected else
                         "Waiting for Chrome — open the companion extension tab")
         snapshot = json.dumps(self.bridge.tabs, sort_keys=True)
         if snapshot != self.tab_snapshot:
@@ -492,15 +500,15 @@ class App(tk.Tk):
         try:
             limit = chunk_limit(self.limit.get())
             if not self.tabs.selection():
-                raise ValueError("Select at least one Udemy tab.")
+                raise ValueError("Select at least one results tab.")
             if time.monotonic() - self.bridge.last_seen >= 40:
                 raise ValueError("Open the Chrome companion tab first (see Chrome setup).")
             if not self.folder.get().strip():
                 raise ValueError("Choose an output folder.")
             for item in self.tabs.selection():
-                command = {"id": uuid.uuid4().hex, "tab_id": int(item)}
+                command = {"id": uuid.uuid4().hex, "tab_id": int(item), "format": "html" if self.format.get().startswith("Offline") else "data"}
                 self.pending[command["id"]] = {**command, "folder": self.folder.get(), "limit": limit,
-                    "fmt": "json" if self.format.get().startswith("JSON") else "md",
+                    "fmt": "html" if command["format"] == "html" else "json" if self.format.get().startswith("JSON") else "md",
                     "full": self.mode.get() != "Questions & your answers"}
                 self.bridge.commands.put(command)
             self.note(f"Queued {len(self.tabs.selection())} tab(s). Keep Chrome and the connector tab open.")
@@ -537,7 +545,7 @@ class App(tk.Tk):
             f"{extension}\n\n(The folder path is copied to your clipboard.)\n\n"
             "4. Keep the StudyDock connection tab open.\n"
             "Next time, open it from Chrome's Extensions menu.\n\n"
-            "Use completed English-language Udemy practice tests; your answers are never changed.", parent=self)
+            "Use completed English-language Udemy or Tutorials Dojo practice tests; your answers are never changed.", parent=self)
 
     def close(self):
         if self.pending and not messagebox.askyesno("Export in progress", "Close the app and discard pending exports?", parent=self):

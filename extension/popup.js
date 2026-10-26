@@ -14,12 +14,12 @@
       await chrome.storage.local.set({[key]: input.checked});
       if (key === "darkMode") document.documentElement.toggleAttribute("data-dark", input.checked);
       // Also reaches tabs opened before the extension was installed or reloaded.
-      const tabs = await chrome.tabs.query({url: ["https://*.udemy.com/*"]});
+      const tabs = await chrome.tabs.query({url: ["https://*.udemy.com/*", "https://portal.tutorialsdojo.com/courses/*"]});
       await Promise.allSettled(tabs.map(async tab => {
-        const files = /\/learn\/(quiz|practice)\//.test(new URL(tab.url).pathname) ? ["notes-store.js", "notes.js", "ui.js", "review.js"] : ["review.js"];
+        const files = new URL(tab.url).hostname === "portal.tutorialsdojo.com" ? ["review-content.js", "dojo.js", "review.js"] : /\/learn\/(quiz|practice)\//.test(new URL(tab.url).pathname) ? ["notes-store.js", "notes.js", "ui.js", "review.js"] : ["review.js"];
         await chrome.scripting.executeScript({target: {tabId: tab.id}, files});
       }));
-      document.getElementById("status").textContent = "Saved for your Udemy tabs.";
+      document.getElementById("status").textContent = "Saved for your study tabs.";
     });
   }
   document.getElementById("connect").addEventListener("click", async () => {

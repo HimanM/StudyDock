@@ -6,23 +6,25 @@ StudyDock is an independent study tool maintained by [HimanM](https://github.com
 
 ## Information used by the extension
 
-To provide review and export features, StudyDock reads content from permitted Udemy pages: questions, answer options, selected answers, correctness labels, explanations, review marks, domain labels, image/reference URLs and test metadata. It also reads open Udemy tab titles/URLs and tab-group names to help you select tests. It does not read Chrome's history database or request cookie access.
+To provide review and export features, StudyDock reads content from permitted Udemy pages: questions, answer options, selected answers, correctness labels, explanations, review marks, domain labels, image/reference URLs and test metadata. It also reads open supported study tab titles/URLs and tab-group names to help you select tests. It does not read Chrome's history database or request cookie access.
 
 Notes you write are stored with a short question preview, quiz identifier, question-content fingerprint, question number when available, source URL, title and update timestamp. A content fingerprint is used to match notes to questions; it is not an advertising identifier. Appearance settings, feature settings and a recent review position are also stored.
+
+Tutorials Dojo exports read the completed-result popup in your signed-in browser, including its answer selections, correctness, review flags, explanations, exam title and attempt metadata. The scraper does not export login tokens, cookies or profile details.
 
 ## Storage, exports and the optional desktop connection
 
 Notes and extension settings are saved in `chrome.storage.local` in your Chrome profile. StudyDock does not use Chrome Sync for them. Browser exports create files you choose to download. The desktop app saves exports to the selected local folder and stores its own preferences in your user-data directory.
 
-Opening the desktop connection page enables communication with the installed application at `http://127.0.0.1:8765` on the same computer. It sends open Udemy tab metadata and, when requested, extracted question data and notes. The connection uses a generated session token and extension-origin checks. It is plain loopback HTTP, not an encrypted HTTPS connection. Closing the connection tab stops its polling. Browser-only review, notes and exports do not require this connection.
+Opening the desktop connection page enables communication with the installed application at `http://127.0.0.1:8765` on the same computer. It sends open supported study tab metadata and, when requested, extracted question data and notes. The connection uses a generated session token and extension-origin checks. It is plain loopback HTTP, not an encrypted HTTPS connection. Closing the connection tab stops its polling. Browser-only review, notes and exports do not require this connection.
 
 StudyDock does not add encryption to notes or exported files. Their protection depends on your browser profile, operating-system account and device security. Other programs with access to those files or your profile may be able to read them.
 
 ## External services and sharing
 
-StudyDock has no analytics, advertising, cloud note storage or built-in AI service. The extension and desktop exporter do not send your question exports or notes to the maintainer. They do not sell your data or use it for advertising, credit decisions or unrelated profiling. They do not read your Udemy password or authentication cookies.
+StudyDock has no analytics, advertising, cloud note storage or built-in AI service. The extension and desktop exporter do not send your question exports or notes to the maintainer. They do not sell your data or use it for advertising, credit decisions or unrelated profiling. They do not read your Udemy or Tutorials Dojo password or authentication cookies.
 
-Displaying a course image may request that image from its original host. Following a reference, support, download or GitHub link connects your browser to that service, whose own privacy policy applies. StudyDock does not control Udemy's or GitHub's data practices. If you later upload an exported file to an LLM or another service, that is a separate action under that service's terms.
+Displaying a course image may request that image from its original host, including when opening a saved HTML review. HTML files contain their review interface, questions, explanations and exported notes; linked course images still need internet. Following a reference, support, download or GitHub link connects your browser to that service, whose own privacy policy applies. StudyDock does not control Udemy's or GitHub's data practices. If you later upload an exported file to an LLM or another service, that is a separate action under that service's terms.
 
 The optional Python installer contacts GitHub to fetch release metadata and a verified desktop package. Because the repository may be private, it can use a GitHub token from your environment or a hidden terminal prompt. It does not save that token, forward it to a different download host, or pass it to the downloaded installer. This installer is separate from the Chrome extension.
 

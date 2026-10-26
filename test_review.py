@@ -221,6 +221,7 @@ def main():
         root.wait_for()
         assert root.get_by_role("heading", name="Question 4", exact=True).is_visible()
         # The original exporter continues to read the intact source DOM.
+        page.evaluate((ROOT / "extension/review-content.js").read_text(encoding="utf-8"))
         export = page.evaluate((ROOT / "extension/extractor.js").read_text(encoding="utf-8"))
         assert len(export["questions"]) == 65, export
         assert page.evaluate("document.querySelectorAll('[class*=question-result-pane-wrapper]').length") == 65
@@ -439,7 +440,7 @@ def main():
             return {ok:true,json:async()=>({command:null})};
           };''')
         connection.goto((ROOT / 'extension/connect.html').resolve().as_uri())
-        connection.get_by_text('Connected · 1 Udemy tab(s) available', exact=True).wait_for()
+        connection.get_by_text('Connected · 1 study tab(s) available', exact=True).wait_for()
         assert connection.locator('html').get_attribute('data-dark') == ''
         screenshot(connection, 'connection.png')
         connection.get_by_role('button', name='Light mode').click()

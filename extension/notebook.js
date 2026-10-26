@@ -6,15 +6,17 @@
   async function tabs() {
     const current = $('tab').value; $('tab').replaceChildren();
     const groups = await chrome.tabGroups.query({});
-    for (const tab of await chrome.tabs.query({url:['https://*.udemy.com/*']})) {
-      if (!/\/learn\/quiz\/\d+\/results?(?:\/|$)/.test(new URL(tab.url).pathname)) continue;
+    for (const tab of await chrome.tabs.query({url:['https://*.udemy.com/*','https://portal.tutorialsdojo.com/courses/*']})) {
+      const url = new URL(tab.url), dojo = url.hostname === 'portal.tutorialsdojo.com';
+      if (!dojo && !/\/learn\/quiz\/\d+\/results?(?:\/|$)/.test(url.pathname)) continue;
       const option = document.createElement('option'); option.value = tab.id;
+      option.dataset.platform = dojo ? 'dojo' : 'udemy';
       const group = groups.find(group => group.id === tab.groupId)?.title;
       option.textContent = `${group ? group + ' · ' : ''}${tab.title}`; $('tab').append(option);
     }
     if ([...$('tab').options].some(option => option.value === current)) $('tab').value = current;
     $('export').disabled = !$('tab').options.length;
-    $('export-status').textContent = $('tab').options.length ? 'Choose a completed attempt, then prepare its files.' : 'Open a completed Udemy test in this Chrome profile, then refresh tabs.';
+    $('export-status').textContent = $('tab').options.length ? 'Choose a completed attempt. For Tutorials Dojo, open its View results popup first.' : 'Open a completed Udemy test or Tutorials Dojo results popup, then refresh tabs.';
   }
   function visibleNotes() { return notes.filter(note => !$('quiz').value || note.quiz_id === $('quiz').value); }
   function renderNotes() {
@@ -50,12 +52,13 @@
     $('downloads').querySelectorAll('a').forEach(link => URL.revokeObjectURL(link.href)); $('downloads').replaceChildren();
     try {
       const tabId = Number($('tab').value);
-      const result = await chrome.scripting.executeScript({target:{tabId},files:['notes-store.js','extractor.js']});
-      const data = result[0]?.result; if (!data) throw new Error('No data returned. Refresh that Udemy tab and retry.');
+      const dojo = $('tab').selectedOptions[0].dataset.platform === 'dojo';
+      const result = await chrome.scripting.executeScript({target:{tabId},files:dojo ? ['review-content.js','dojo.js','dojo-extractor.js'] : ['review-content.js','notes-store.js','extractor.js']});
+      const data = result[0]?.result; if (!data) throw new Error('No data returned. Refresh the results tab and retry.');
       if (data.error) throw new Error(data.error);
-      const files = StudyDockExport.chunks(data,$('format').value,$('limit').value,$('detail').value === 'full');
+      const files = $('format').value === 'html' ? await StudyDockPortable.chunks(data,$('limit').value,$('detail').value === 'full') : StudyDockExport.chunks(data,$('format').value,$('limit').value,$('detail').value === 'full');
       files.forEach(file => $('downloads').append(StudyDockExport.downloadLink(file)));
-      $('export-status').textContent = `${data.questions.length} questions ready. Click each file to save it to Downloads.`;
+      $('export-status').textContent = `${data.questions.length} questions ready. Click each file to save it to Downloads.${$('format').value === 'html' ? ' Linked images need internet.' : ''}`;
     } catch(error) { $('export-status').textContent = 'Export failed: ' + error.message; }
     finally { $('export').disabled = !$('tab').options.length; }
   };

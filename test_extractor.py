@@ -63,7 +63,7 @@ def check_browser():
     except ImportError:
         print("SKIP: browser parser checks (optional developer dependency: playwright)")
         return
-    script = (Path(__file__).parent / "extension/extractor.js").read_text(encoding="utf-8")
+    script = (Path(__file__).parent / "extension/review-content.js").read_text(encoding="utf-8") + "\n" + (Path(__file__).parent / "extension/extractor.js").read_text(encoding="utf-8")
     cards = []
     for number in range(1, 6):
         state = {1: "Correct", 2: "Incorrect", 3: "Correct", 4: "Skipped", 5: "Incorrect"}[number]

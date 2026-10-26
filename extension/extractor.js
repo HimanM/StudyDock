@@ -12,40 +12,8 @@
   const wrapper = '[class*="result-pane--question-result-pane-wrapper--"]';
   const rich = '[data-purpose="safely-set-inner-html:rich-text-viewer:html"]';
   const clean = value => value.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
-  const url = value => {
-    try { const u = new URL(value, location.href); return /^https?:$/.test(u.protocol) ? u.href : ""; }
-    catch { return ""; }
-  };
-  // Preserve diagrams, links, tables and code instead of flattening to innerText.
-  function md(node) {
-    if (!node) return "";
-    if (node.nodeType === 3) return node.textContent.replace(/\s+/g, " ");
-    if (node.nodeType !== 1 || /^(SCRIPT|STYLE|SVG|BUTTON)$/.test(node.tagName)) return "";
-    const body = () => [...node.childNodes].map(md).join("");
-    switch (node.tagName) {
-      case "BR": return "\n";
-      case "IMG": {
-        const src = url(node.getAttribute("data-src") || node.getAttribute("src") || node.currentSrc);
-        return src ? `\n![${(node.alt || "Question diagram").replace(/[\[\]]/g, "")}](${src.replace(/\(/g, "%28").replace(/\)/g, "%29")})\n` : "[Image unavailable]";
-      }
-      case "A": { const href = url(node.getAttribute("href")); return href ? `[${body().trim()}](<${href}>)` : body(); }
-      case "STRONG": case "B": return `**${body().trim()}**`;
-      case "EM": case "I": return `*${body().trim()}*`;
-      case "PRE": return `\n\n\`\`\`\`\n${node.textContent.trim()}\n\`\`\`\`\n\n`;
-      case "CODE": return `\`\`${node.textContent.trim()}\`\``;
-      case "UL": case "OL": return "\n" + [...node.children].map((li, i) =>
-        `${node.tagName === "OL" ? `${i + 1}.` : "-"} ${clean(md(li)).replace(/\n/g, "\n  ")}`).join("\n") + "\n\n";
-      case "TABLE": {
-        const rows = all("tr", node).map(row => [...row.cells].map(cell => clean(md(cell)).replace(/\n/g, "<br>").replace(/\|/g, "\\|")));
-        if (!rows.length) return "";
-        const width = Math.max(...rows.map(row => row.length));
-        const line = row => "| " + Array.from({length: width}, (_, i) => row[i] || "").join(" | ") + " |";
-        return "\n\n" + [line(rows[0]), line(Array(width).fill("---")), ...rows.slice(1).map(line)].join("\n") + "\n\n";
-      }
-      case "P": case "DIV": case "BLOCKQUOTE": return "\n\n" + body() + "\n\n";
-      default: return body();
-    }
-  }
+  const md = node => StudyDockContent.md(node);
+  const html = node => globalThis.StudyDockContent && node ? StudyDockContent.clean(node).innerHTML : undefined;
   try {
     if (!/\/learn\/quiz\/\d+\/results?(?:\/|$)/.test(location.pathname)) {
       throw new Error("Open a completed practice test's Results or Review questions page. In-progress tests are not exported.");
@@ -89,7 +57,7 @@
         const selected = /^your (answer|selection)/.test(label);
         const answerContainer = answer.closest('[class*="result-pane--answer-result-pane--"]') || answer;
         const explanation = all(rich, answerContainer).filter(node => node.id !== "answer-text" && !node.closest('[data-purpose="answer-body"]'));
-        return {label: String.fromCharCode(65 + i), text: optionText, selected, correct, explanation: clean(explanation.map(md).join("\n\n")) || null};
+        return {label: String.fromCharCode(65 + i), text: optionText, text_html: html(answer.querySelector('[id="answer-text"]') || answer.querySelector(`[data-purpose="answer-body"] ${rich}`)), selected, correct, explanation_html: globalThis.StudyDockContent ? explanation.map(node => html(node)).join("") : undefined, explanation: clean(explanation.map(md).join("\n\n")) || null};
       });
       const selected_answers = options.filter(o => o.selected).map(o => o.label);
       const correct_answers = options.filter(o => o.correct).map(o => o.label);
@@ -101,9 +69,10 @@
         throw new Error(`Answer selections disagree with the result for question ${number}.`);
       }
       const marked_for_review = !!q.querySelector('[class*="result-pane--star-rating-icon--"]');
-      return {number, question: clean(md(q.querySelector('[id="question-prompt"]'))), options,
+      return {number, question: clean(md(q.querySelector('[id="question-prompt"]'))), question_html: html(q.querySelector('[id="question-prompt"]')), options,
         selected_answers, correct_answers, status, is_correct: status === "correct" ? true : status === "incorrect" ? false : null,
         marked_for_review, tags: [...(marked_for_review ? ["marked_for_review"] : []), status],
+        explanation_html: html(q.querySelector('[id="overall-explanation"]')),
         explanation: clean(md(q.querySelector('[id="overall-explanation"]'))) || null,
         domain: text(q.querySelector('[data-purpose="domain-pane"] .ud-text-md')) || null};
     });
