@@ -4,7 +4,7 @@ A single-page study workspace for Udemy and Tutorials Dojo, built as a Next.js s
 
 ## Develop and build
 
-Node 22+ and npm are needed for website development. Building also needs Python 3.9+ (standard library only) to package the extension download. From `website/`:
+Node 24 LTS and npm are needed for website development. Building also needs Python 3.9+ (standard library only) to package the extension download. From `website/`:
 
 ```sh
 npm ci
