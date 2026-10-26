@@ -36,7 +36,7 @@ Environment variables are read when building, not when serving the exported file
 | `NEXT_PUBLIC_REPO_PRIVATE` | `false`. Set `true` only when building for a private GitHub repository, to show the desktop-download access note. The extension ZIP on the public website does not require repository access. This does not change repository visibility. |
 | `NEXT_TELEMETRY_DISABLED` | Set `1` to disable Next.js build-tool telemetry. The published website has no Next.js runtime server. |
 
-The current desktop version is deliberately `1.4.3` in `lib/config.js`, matching the published app packages. The source extension can have a newer version. `PREVIEW_VERSION` links to the separately labeled Dojo/HTML preview, while the operating-system download buttons continue to use the stable version. When a new desktop release is actually published, update that constant and rebuild. Download URLs are direct GitHub release URLs; they are not fabricated store links.
+The stable desktop version is `1.5.0` in `lib/config.js`, matching the published app packages. Both Udemy and Tutorials Dojo support and portable HTML exports are included. When a new stable desktop release is published, update that constant and rebuild. Download URLs point directly to GitHub release packages.
 
 ### Custom domain: studydock.himanm.com
 

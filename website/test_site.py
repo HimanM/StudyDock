@@ -34,7 +34,9 @@ try:
         page.on('response',lambda response:failed.append(response.url) if response.status>=400 else None)
         page.goto(url); page.get_by_role('heading',level=1).wait_for()
         assert page.locator('h1').count()==1
-        assert page.get_by_role('link',name='Get the 1.5.0-rc.1 preview',exact=True).get_attribute('href').endswith('/releases/tag/v1.5.0-rc.1')
+        version=json.loads((ROOT.parent/'extension/manifest.json').read_text())['version']
+        assert page.get_by_role('link',name='Optional Python installer',exact=True).get_attribute('href').endswith(f'/blob/v{version}/install.py')
+        assert page.locator('.download-detail .eyebrow').text_content().endswith('v'+version)
         assert '\u2014' not in page.title()
         assert '\u2014' not in page.locator('body').inner_text()
         page.wait_for_function("document.documentElement.dataset.theme==='dark'")
