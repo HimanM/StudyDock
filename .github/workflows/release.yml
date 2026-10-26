@@ -3,13 +3,36 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Build only (no publishing): version such as 1.5.0-rc.1; blank uses manifest'
+        type: string
+        default: ''
 permissions:
   contents: read
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
+  metadata:
+    runs-on: ubuntu-22.04
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - id: release
+        env:
+          RELEASE_VERSION: ${{ github.ref_type == 'tag' && github.ref_name || inputs.version }}
+        run: python tools/release_metadata.py --version "$RELEASE_VERSION" --github-output "$GITHUB_OUTPUT"
   checks:
+    needs: metadata
     uses: ./.github/workflows/ci.yml
   build:
-    needs: checks
+    needs: [metadata, checks]
     strategy:
       fail-fast: false
       matrix:
@@ -23,13 +46,11 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: requirements-dev.txt
-      - name: Verify release version
-        shell: python
-        run: |
-          import json, os
-          version = json.load(open('extension/manifest.json'))['version']
-          if os.environ['GITHUB_REF_TYPE'] == 'tag':
-              assert os.environ['GITHUB_REF_NAME'] == 'v' + version, 'Tag and manifest versions differ'
+      - name: Set packaged release version
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+        shell: bash
+        run: python tools/release_metadata.py --version "$RELEASE_VERSION" --prepare
       - run: python -m pip install -r requirements-dev.txt
       - if: runner.os == 'Windows'
         run: choco install innosetup --no-progress -y
@@ -69,9 +90,29 @@ jobs:
             dist/*.bin
           if-no-files-found: error
           retention-days: 14
+  extension:
+    needs: [metadata, checks]
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Package browser extension separately
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+        run: |
+          python tools/release_metadata.py --version "$RELEASE_VERSION" --prepare
+          python tools/build_browser_download.py --output "dist/StudyDock-$RELEASE_VERSION-browser-extension.zip"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages-browser-extension
+          path: dist/*-browser-extension.zip
+          if-no-files-found: error
+          retention-days: 14
   publish:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: [metadata, build, extension]
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -80,8 +121,27 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: release-assets
+          pattern: packages-*
           merge-multiple: true
-      - name: Publish tested packages
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare download buttons and release notes
+        env:
+          RELEASE_VERSION: ${{ needs.metadata.outputs.version }}
+          CHROME_STORE_URL: ${{ vars.CHROME_STORE_URL }}
+        run: python tools/release_notes.py --version "$RELEASE_VERSION" --commit "$GITHUB_SHA" --store-url "$CHROME_STORE_URL" --output release-body.md
+      - name: Publish complete, tested release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" release-assets/* --verify-tag --title "StudyDock ${GITHUB_REF_NAME}" --notes-file RELEASE_NOTES.md
+          PRERELEASE: ${{ needs.metadata.outputs.prerelease }}
+        run: |
+          flags=(--latest)
+          if [ "$PRERELEASE" = true ]; then flags=(--prerelease --latest=false); fi
+          if gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft > existing-draft; then
+            test "$(cat existing-draft)" = true || { echo 'Refusing to replace a published release'; exit 1; }
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --draft "${flags[@]}" --title "StudyDock ${GITHUB_REF_NAME}" --notes-file release-body.md
+          fi
+          gh release upload "$GITHUB_REF_NAME" release-assets/* --clobber
+          gh release edit "$GITHUB_REF_NAME" --draft=false "${flags[@]}" --notes-file release-body.md

@@ -6,12 +6,14 @@ import shutil
 import subprocess
 import sys
 import zipfile
+from release_metadata import metadata
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
-    version = json.loads((ROOT / "extension/manifest.json").read_text())["version"]
+    manifest = json.loads((ROOT / "extension/manifest.json").read_text())
+    version = metadata(manifest.get('version_name', manifest['version']), manifest['version'])['version']
     output = ROOT / "dist"
     output.mkdir(exist_ok=True)
     icon = ROOT / "extension/icons/study.ico"
@@ -45,7 +47,7 @@ def main():
         artifacts.append(destination)
     elif sys.platform == "win32":
         iscc = shutil.which("ISCC") or r"C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-        subprocess.run([iscc, f"/DAppVersion={version}", str(ROOT / "packaging/windows.iss")], check=True)
+        subprocess.run([iscc, f"/DAppVersion={version}", f"/DAppNumericVersion={manifest['version']}", str(ROOT / "packaging/windows.iss")], check=True)
         artifacts.append(output / f"{prefix}-setup.exe")
         destination = output / f"{prefix}-portable.zip"
         with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:

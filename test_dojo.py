@@ -32,6 +32,10 @@ def main():
         page.goto(URL);page.evaluate(MOCK)
         for file in ['review-content.js','dojo.js','review.js']: page.evaluate((ROOT/'extension'/file).read_text(encoding='utf-8'))
         assert page.locator('#udemy-study-review').count()==0
+        page.evaluate('chrome.storage.local.set({darkMode:true})')
+        page.wait_for_timeout(250)
+        assert not page.locator('html').evaluate("node=>node.hasAttribute('data-study-dark')")
+        assert page.locator('[data-study-native-surface],[data-study-native-ink]').count()==0
         data=page.evaluate('StudyDockDojo.extract()')
         assert data['title']=='Example exam' and data['expected_count']==5
         assert [q['status'] for q in data['questions']]==['correct','incorrect','correct','incorrect','skipped']

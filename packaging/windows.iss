@@ -5,6 +5,8 @@
 AppId={{497BD008-C5FA-4320-BB40-B0ECBB0383C6}
 AppName=StudyDock
 AppVersion={#AppVersion}
+VersionInfoVersion={#AppNumericVersion}
+VersionInfoProductTextVersion={#AppVersion}
 AppPublisher=HimanM
 AppPublisherURL=https://github.com/HimanM/Udemy-Study-Tools
 DefaultDirName={localappdata}\Programs\UdemyStudyTools

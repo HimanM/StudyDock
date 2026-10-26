@@ -1,6 +1,6 @@
 # StudyDock website
 
-A single-page Next.js static export using Material UI components, Material icons and a self-hosted Roboto font. There is no runtime server, database, analytics SDK or remote demo API. The site uses the existing StudyDock artwork and screenshots of the actual extension with synthetic questions.
+A single-page study workspace for Udemy and Tutorials Dojo, built as a Next.js static export using Material UI components, Material icons and a self-hosted Roboto font. There is no runtime server, database, analytics SDK or remote demo API. The site uses the existing StudyDock artwork and screenshots of the actual extension with synthetic questions.
 
 ## Develop and build
 
@@ -30,26 +30,26 @@ Environment variables are read when building, not when serving the exported file
 
 | Variable | Default / behavior |
 | --- | --- |
-| `NEXT_PUBLIC_BASE_PATH` | Empty for `udemystudytool.himanm.com`. Set `/Udemy-Study-Tools` only when building for the GitHub project URL without the custom domain. No trailing slash. |
+| `NEXT_PUBLIC_BASE_PATH` | Empty for `studydock.himanm.com`. Set `/Udemy-Study-Tools` only when building for the GitHub project URL without the custom domain. No trailing slash. |
 | `NEXT_PUBLIC_SITE_URL` | Set the complete deployed homepage URL with a trailing slash to generate absolute social-preview image URLs. No assumed public deployment is embedded when unset. |
 | `NEXT_PUBLIC_CHROME_STORE_URL` | Empty until the extension is published. Only an HTTPS `chromewebstore.google.com/detail/…` URL activates the store-install CTA. Otherwise it downloads the extension-only ZIP from `/downloads/StudyDock-extension.zip`. Extract it and load the folder containing `manifest.json` in Chrome. |
-| `NEXT_PUBLIC_REPO_PRIVATE` | `true`. Set `false` after making the GitHub repository public, to remove the desktop-download access note. The extension ZIP on the public website does not require repository access. This does not change repository visibility. |
+| `NEXT_PUBLIC_REPO_PRIVATE` | `false`. Set `true` only when building for a private GitHub repository, to show the desktop-download access note. The extension ZIP on the public website does not require repository access. This does not change repository visibility. |
 | `NEXT_TELEMETRY_DISABLED` | Set `1` to disable Next.js build-tool telemetry. The published website has no Next.js runtime server. |
 
 The current desktop version is deliberately `1.4.3` in `lib/config.js`, matching the published app packages. The source extension can have a newer version. When a new desktop release is actually published, update that constant and rebuild. Download URLs are direct GitHub release URLs; they are not fabricated store links.
 
-### Custom domain: udemystudytool.himanm.com
+### Custom domain: studydock.himanm.com
 
 The **Website** workflow tests/builds on relevant pushes and PRs. It uploads a static artifact without publishing it. Deployment is manual:
 
-1. Configure **Settings → Pages → Source → GitHub Actions**. GitHub Pages for a private repository requires an eligible GitHub plan; otherwise make the repository public when you choose. This workflow does not change repository visibility.
+1. Configure **Settings → Pages → Source → GitHub Actions**. The public repository can publish to GitHub Pages. This workflow does not change repository visibility.
 2. Add repository variable `CHROME_STORE_URL` only after Chrome approves and publishes the actual store item; it is optional before then.
 3. Run **Actions → Website → Run workflow**, choosing **Publish to GitHub Pages**.
-4. Set the Pages custom domain to `udemystudytool.himanm.com`. In Cloudflare DNS, add a **CNAME** named `udemystudytool` with target `himanm.github.io`, initially **DNS only**. GitHub may also request domain verification; follow the exact TXT record it gives you rather than inventing a token.
+4. Set the Pages custom domain to `studydock.himanm.com`. In Cloudflare DNS, add a **CNAME** named `studydock` with target `himanm.github.io`, initially **DNS only**. GitHub may also request domain verification; follow the exact TXT record it gives you rather than inventing a token.
 5. After DNS validation and certificate provisioning, enable **Enforce HTTPS** in Pages. The repository's `public/CNAME` also records the requested hostname.
-6. Verify `https://udemystudytool.himanm.com/`, download links and `/privacy/` while signed out before using those URLs in a public store listing. The site can be public while release/source downloads still require access to this private repository.
+6. Verify `https://studydock.himanm.com/`, download links and `/privacy/` while signed out before using those URLs in a public store listing. The site can be public while release/source downloads require access to the repository.
 
-The workflow builds for the custom domain at `/`, with absolute social-preview URLs under `https://udemystudytool.himanm.com/`. For a different host, build with the appropriate base path/site URL and upload `out/`. DNS access is separate from GitHub repository access; committing the CNAME file alone does not create the DNS record.
+The workflow builds for the custom domain at `/`, with absolute social-preview URLs under `https://studydock.himanm.com/`. For a different host, build with the appropriate base path/site URL and upload `out/`. DNS access is separate from GitHub repository access; committing the CNAME file alone does not create the DNS record.
 
 ## Content and behavior
 
@@ -58,7 +58,7 @@ The workflow builds for the custom domain at `/`, with absolute social-preview U
 - `lib/config.js` contains release URLs and OS detection; Mac chip and Linux libc compatibility are not inferred from the browser.
 - `lib/demo.js` contains illustrative questions and the example Markdown/JSON serializer. Demo notes are held only in memory until reload.
 - `components/Privacy.jsx` renders `../docs/PRIVACY.md` at build time on `/privacy/`. Both homepage Privacy links open that page, which also works without JavaScript. The homepage's existing `#privacy` anchor remains a short introduction with a policy link.
-- `public/images/` contains the product previews and app icon. No personal Udemy screenshot or real course export is used.
+- `public/images/` contains the product previews and app icon. No personal course screenshot or real course export is used.
 
 The default theme follows the system. A manual choice is saved in the site's local storage. All icons come from `@mui/icons-material`; interface components use `@mui/material`. Custom layout CSS uses the same surface/color palette. Reduced motion is respected. Navigation, controls and screenshot dialogs are keyboard accessible.
 

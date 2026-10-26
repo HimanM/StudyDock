@@ -12,6 +12,15 @@ import install
 
 
 class InstallerTests(unittest.TestCase):
+    def test_pinned_prerelease(self):
+        self.assertEqual(install.release_endpoint(''), install.API + '/latest')
+        self.assertEqual(install.release_endpoint('v1.5.0-rc.1'), install.API + '/tags/v1.5.0-rc.1')
+        for bad in ['../main', '1.5.0-rc.0', '1.5.0;echo test']:
+            with self.assertRaises(ValueError):
+                install.release_endpoint(bad)
+        asset = {'id':1,'name':'StudyDock-1.5.0-rc.1-linux-x64.bin','digest':'sha256:'+'0'*64,'size':1}
+        self.assertEqual(install.select_asset({'tag_name':'v1.5.0-rc.1','assets':[asset]}, 'linux-x64.bin'), asset)
+
     def test_platform_selection(self):
         for system, machine, suffix in [('Linux','x86_64','linux-x64.bin'), ('Windows','AMD64','windows-x64-setup.exe'),
                                         ('Darwin','arm64','macos-arm64.dmg'), ('Darwin','x86_64','macos-x64.dmg')]:
@@ -39,6 +48,8 @@ class InstallerTests(unittest.TestCase):
             package = install.download(opener,asset,'test-token',Path(directory))
             self.assertEqual(package.read_bytes(),content)
             self.assertEqual(opener.request.full_url,install.API+'/assets/1')
+            install.download(opener,asset,None,Path(directory))
+            self.assertIsNone(opener.request.get_header('Authorization'))
             for changes in [{'digest':'sha256:'+'0'*64},{'size':1},{'size':1000}]:
                 with self.assertRaises(ValueError):
                     install.download(opener,{**asset,**changes},'test-token',Path(directory))

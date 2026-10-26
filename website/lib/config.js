@@ -2,7 +2,7 @@ export const REPOSITORY = 'https://github.com/HimanM/Udemy-Study-Tools';
 export const VERSION = '1.4.3';
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 export const EXTENSION_ZIP = `${BASE_PATH}/downloads/StudyDock-extension.zip`;
-export const PRIVATE_REPOSITORY = process.env.NEXT_PUBLIC_REPO_PRIVATE !== 'false';
+export const PRIVATE_REPOSITORY = process.env.NEXT_PUBLIC_REPO_PRIVATE === 'true';
 const store = process.env.NEXT_PUBLIC_CHROME_STORE_URL || '';
 export const STORE_URL = /^https:\/\/chromewebstore\.google\.com\/detail\//.test(store) ? store : '';
 export const asset = (path) => `${BASE_PATH}/${path}`;

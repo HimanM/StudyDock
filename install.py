@@ -1,6 +1,5 @@
 """Install the latest packaged StudyDock desktop app. Python 3.9+, no pip packages."""
 import argparse
-import getpass
 import hashlib
 import json
 import os
@@ -17,6 +16,16 @@ from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 API = 'https://api.github.com/repos/HimanM/Udemy-Study-Tools/releases'
+VERSION_PATTERN = r'\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.[1-9]\d*)?'
+
+
+def release_endpoint(version):
+    if not version:
+        return API + '/latest'
+    version = version.removeprefix('v')
+    if not re.fullmatch(VERSION_PATTERN, version):
+        raise ValueError('Use a version such as 1.5.0 or 1.5.0-rc.1.')
+    return API + '/tags/v' + version
 
 
 class SafeRedirect(HTTPRedirectHandler):
@@ -41,7 +50,7 @@ def asset_suffix(system, machine):
 
 def select_asset(release, suffix):
     version = release.get('tag_name', '').removeprefix('v')
-    if not re.fullmatch(r'\d+\.\d+\.\d+', version):
+    if not re.fullmatch(VERSION_PATTERN, version):
         raise ValueError('Release has an invalid version.')
     name = f'StudyDock-{version}-{suffix}'
     asset = next((asset for asset in release.get('assets', []) if asset.get('name') == name), None)
@@ -54,7 +63,9 @@ def select_asset(release, suffix):
 
 def download(opener, asset, token, directory):
     package = directory / asset['name']
-    headers = {'Authorization': f'Bearer {token}', 'Accept': 'application/octet-stream', 'User-Agent': 'StudyDock-installer'}
+    headers = {'Accept': 'application/octet-stream', 'User-Agent': 'StudyDock-installer'}
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
     digest = hashlib.sha256()
     size = 0
     with opener.open(Request(f"{API}/assets/{asset['id']}", headers=headers), timeout=120) as response, package.open('wb') as output:
@@ -106,18 +117,22 @@ def install(package, system):
 
 
 def main():
-    argparse.ArgumentParser(description=__doc__).parse_args()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--version', default='', help='Install a specific version, including a prerelease; default: latest stable.')
+    args = parser.parse_args()
+    endpoint = release_endpoint(args.version)
     system = platform.system()
     suffix = asset_suffix(system, platform.machine())
     if system == 'Linux':
         libc, version = platform.libc_ver()
         if libc != 'glibc' or tuple(map(int, version.split('.')[:2])) < (2, 35):
             raise ValueError('Linux requires x64 glibc 2.35+ and an X11/XWayland desktop.')
-    token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN') or getpass.getpass('GitHub token with read access to the private StudyDock repository: ').strip()
-    if not token:
-        raise ValueError('A GitHub token is needed for this private repository. You can also download the app in your browser.')
+    token = os.environ.get('GH_TOKEN') or os.environ.get('GITHUB_TOKEN')
     opener = build_opener(SafeRedirect())
-    request = Request(API + '/latest', headers={'Authorization': f'Bearer {token}', 'Accept': 'application/vnd.github+json', 'User-Agent': 'StudyDock-installer'})
+    headers = {'Accept': 'application/vnd.github+json', 'User-Agent': 'StudyDock-installer'}
+    if token:
+        headers['Authorization'] = f'Bearer {token}'
+    request = Request(endpoint, headers=headers)
     with opener.open(request, timeout=30) as response:
         asset = select_asset(json.load(response), suffix)
     print(f"Downloading {asset['name']}… Close StudyDock before upgrading.")

@@ -24,7 +24,8 @@ import uuid
 
 ROOT = Path(__file__).resolve().parent
 PORT = 8765
-VERSION = json.loads((ROOT / "extension/manifest.json").read_text(encoding="utf-8"))["version"]
+_manifest = json.loads((ROOT / "extension/manifest.json").read_text(encoding="utf-8"))
+VERSION = _manifest.get("version_name", _manifest["version"])
 
 
 def user_data_dir():
@@ -323,7 +324,7 @@ class App(tk.Tk):
         except (OSError, ValueError):
             pass
         self.dark = self.preferences.get("darkMode", True) is True
-        self.title("StudyDock — Exporter")
+        self.title(f"StudyDock {VERSION} — Exporter")
         self.brand_icon = tk.PhotoImage(file=ROOT / "extension/icons/icon-48.png")
         self.iconphoto(True, tk.PhotoImage(file=ROOT / "extension/icons/icon-256.png"), self.brand_icon)
         if os.name == "nt":

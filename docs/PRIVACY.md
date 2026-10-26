@@ -2,15 +2,15 @@
 
 Last updated: 25 October 2026.
 
-StudyDock is an independent study tool maintained by [HimanM](https://github.com/HimanM). This policy covers the Chrome extension, the optional desktop exporter and the project website. StudyDock is not affiliated with Udemy or Google.
+StudyDock is an independent study tool maintained by [HimanM](https://github.com/HimanM). This policy covers the Chrome extension, the optional desktop exporter and the project website. StudyDock is not affiliated with Udemy, Tutorials Dojo or Google.
 
 ## Information used by the extension
 
-To provide review and export features, StudyDock reads content from permitted Udemy pages: questions, answer options, selected answers, correctness labels, explanations, review marks, domain labels, image/reference URLs and test metadata. It also reads open supported study tab titles/URLs and tab-group names to help you select tests. It does not read Chrome's history database or request cookie access.
+To provide review and export features, StudyDock reads content from supported study pages: Udemy practice-test pages, including question content used by the notes editor, and completed View results popups on `portal.tutorialsdojo.com`. This can include questions, answer options, selected answers, correctness labels, explanations, review marks, domain labels, image/reference URLs and test metadata. It also reads open supported study tab titles/URLs and tab-group names to help you select tests. It does not read Chrome's history database or request cookie access.
 
 Notes you write are stored with a short question preview, quiz identifier, question-content fingerprint, question number when available, source URL, title and update timestamp. A content fingerprint is used to match notes to questions; it is not an advertising identifier. Appearance settings, feature settings and a recent review position are also stored.
 
-Tutorials Dojo exports read the completed-result popup in your signed-in browser, including its answer selections, correctness, review flags, explanations, exam title and attempt metadata. The scraper does not export login tokens, cookies or profile details.
+Question-note editing is available on Udemy pages; the extension reads question content there to attach each note to its question. Tutorials Dojo exports read the completed-result popup in your signed-in browser, including its answer selections, correctness, review flags, explanations, exam title and attempt metadata. The scraper does not export login tokens, cookies or profile details.
 
 ## Storage, exports and the optional desktop connection
 
@@ -24,13 +24,13 @@ StudyDock does not add encryption to notes or exported files. Their protection d
 
 StudyDock has no analytics, advertising, cloud note storage or built-in AI service. The extension and desktop exporter do not send your question exports or notes to the maintainer. They do not sell your data or use it for advertising, credit decisions or unrelated profiling. They do not read your Udemy or Tutorials Dojo password or authentication cookies.
 
-Displaying a course image may request that image from its original host, including when opening a saved HTML review. HTML files contain their review interface, questions, explanations and exported notes; linked course images still need internet. Following a reference, support, download or GitHub link connects your browser to that service, whose own privacy policy applies. StudyDock does not control Udemy's or GitHub's data practices. If you later upload an exported file to an LLM or another service, that is a separate action under that service's terms.
+Displaying a course image may request that image from its original host, including Udemy or Tutorials Dojo, when opening a saved HTML review. HTML files contain their review interface, questions, explanations and exported notes; linked course images still need internet. Following a reference, support, download or GitHub link connects your browser to that service, whose own privacy policy applies. StudyDock does not control Udemy's, Tutorials Dojo's or GitHub's data practices. If you later upload an exported file to an LLM or another service, that is a separate action under that service's terms.
 
-The optional Python installer contacts GitHub to fetch release metadata and a verified desktop package. Because the repository may be private, it can use a GitHub token from your environment or a hidden terminal prompt. It does not save that token, forward it to a different download host, or pass it to the downloaded installer. This installer is separate from the Chrome extension.
+The optional Python installer contacts GitHub to fetch release metadata and a verified desktop package. Public release downloads need no token. You can optionally provide `GH_TOKEN` or `GITHUB_TOKEN` to download from a private repository. The installer does not save that token, forward it to another download host, or pass it to the downloaded installer. This installer is separate from the Chrome extension.
 
 ## Website
 
-The product website has no analytics or advertising scripts. It uses browser platform information locally to suggest a desktop download; it cannot reliably determine every CPU architecture or Linux compatibility detail. You can choose another platform manually. Theme preference is saved in the site's local storage. Interactive example notes are held in page memory and are discarded when the page reloads. Website demonstrations use illustrative content and do not access your Udemy tabs.
+The product website has no analytics or advertising scripts. It uses browser platform information locally to suggest a desktop download; it cannot reliably determine every CPU architecture or Linux compatibility detail. You can choose another platform manually. Theme preference is saved in the site's local storage. Interactive example notes are held in page memory and are discarded when the page reloads. Website demonstrations use illustrative content and do not access your Udemy or Tutorials Dojo tabs.
 
 The website host and linked download providers receive normal web requests, including information such as IP addresses and browser headers. Hosting-provider logging is governed by that provider's policy. The site does not intentionally send demo notes to a server.
 

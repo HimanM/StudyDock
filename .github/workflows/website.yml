@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       deploy:
-        description: Publish to GitHub Pages at udemystudytool.himanm.com
+        description: Publish to GitHub Pages at studydock.himanm.com
         type: boolean
         default: false
 permissions:
@@ -20,7 +20,7 @@ jobs:
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       NEXT_PUBLIC_BASE_PATH: ''
-      NEXT_PUBLIC_SITE_URL: https://udemystudytool.himanm.com/
+      NEXT_PUBLIC_SITE_URL: https://studydock.himanm.com/
       NEXT_PUBLIC_REPO_PRIVATE: ${{ github.event.repository.private }}
       NEXT_PUBLIC_CHROME_STORE_URL: ${{ vars.CHROME_STORE_URL }}
     steps:

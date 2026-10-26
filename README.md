@@ -12,7 +12,7 @@ A Chrome extension for Udemy and Tutorials Dojo practice exams, question notes a
 - **Consistent appearance:** light/dark themes, Material icons, comfortable reading widths, and short transitions that respect reduced-motion preferences.
 - **Native Udemy dark mode:** themes neutral surfaces and text on the original page, including hard-coded white cards. Colored charts and media retain their original colors.
 - **Exam controls:** full-height view, optional pause-overlay removal, and optional auto-resume.
-- **Question notes:** write beside an exam question or in focused review. Notes save locally in Chrome and join matching questions in exports.
+- **Question notes:** write beside Udemy questions. Notes save locally in Chrome and join matching questions in exports.
 - **Browser exports:** export completed tests or just your notes without running the desktop app. Choose Markdown, JSON or HTML and question batches of 5 or more, or All; default 20.
 - **Settings:** hide desktop integration and the extra full-height shortcut, enable/disable notes, and choose appearance and exam behavior. Creator/source links live here.
 - **Portable HTML:** the same focused review UI in a saved file, named after the exam. Filters, explanations, keyboard controls, diagrams and saved notes use the shared renderer. Questions and explanations work offline; linked images and reference links need internet. No installed app is needed to open the HTML.
@@ -24,7 +24,7 @@ Review, notes and browser downloads need only the extension. Reviewing/exporting
 
 Download the matching package from [Releases](https://github.com/HimanM/Udemy-Study-Tools/releases). Packaged desktop apps include Python and Tk; you do not need to install Python separately.
 
-Release assets contain only the desktop application packages. Download the [extension-only ZIP](https://udemystudytool.himanm.com/downloads/StudyDock-extension.zip) separately from the website. GitHub Actions packages the extension files for GitHub Pages; the ZIP contains no desktop application or repository source outside the extension.
+Release assets include desktop packages and, starting with v1.5.0-rc.1, a separately named browser-extension ZIP. [Download the v1.5.0-rc.1 extension ZIP](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.5.0-rc.1/StudyDock-1.5.0-rc.1-browser-extension.zip). It contains only browser extension files, with no desktop app or unrelated repository source.
 
 | System | Package | Installation |
 | --- | --- | --- |
@@ -48,19 +48,19 @@ The Windows and macOS packages are **unsigned**; no publisher certificate or App
 
 ### Optional Python installer
 
-If Python 3.9+ is already available, download [install.py](install.py) using GitHub's **Download raw file** button, then run:
+If Python 3.9+ is already available, download [install.py](install.py) using GitHub's **Download raw file** button, then run it to install the latest stable release:
 
 ```sh
 python3 install.py
 ```
 
-On Windows, use `py install.py`. No pip packages are needed. The script downloads the latest packaged app for your OS/CPU, verifies its SHA-256 digest, and installs it. Linux gets the app-menu and desktop shortcuts; Windows opens the normal setup wizard; macOS installs to `~/Applications/StudyDock.app`. Close StudyDock before upgrading.
+To install a specific release, add `--version 1.5.0-rc.1`; the installer defaults to the latest stable release. On Windows, use `py install.py` with the same option if needed. No pip packages are needed. The script downloads the latest packaged app for your OS/CPU, verifies its SHA-256 digest, and installs it. Linux gets the app-menu and desktop shortcuts; Windows opens the normal setup wizard; macOS installs to `~/Applications/StudyDock.app`. Close StudyDock before upgrading.
 
-Public releases download without a token. If authentication is needed, the script can read `GH_TOKEN` or `GITHUB_TOKEN`, or ask for a token in a hidden terminal prompt. Use a token with read-only **Contents** access to this repository. The token is not saved or passed to the downloaded installer. Browser downloads do not require a token. Python is needed only to run this optional installer; the installed app runs independently.
+Public releases download without a token. Optionally set `GH_TOKEN` or `GITHUB_TOKEN` when downloading from a private repository. The installer does not save the token or pass it to the downloaded installer. Browser downloads do not require a token. Python is needed only to run this optional installer; the installed app runs independently.
 
 ### Chrome companion
 
-1. Download the [extension-only ZIP](https://udemystudytool.himanm.com/downloads/StudyDock-extension.zip) and extract it into a permanent folder, or use the desktop app's **Chrome setup** button to find its bundled extension.
+1. Download the [v1.5.0-rc.1 browser-extension ZIP](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.5.0-rc.1/StudyDock-1.5.0-rc.1-browser-extension.zip) and extract it into a permanent folder, or use the desktop app's **Chrome setup** button to find its bundled extension.
 2. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**.
 3. Choose the extracted folder containing `manifest.json` (or the desktop app's `extension` folder). Pin **StudyDock** from Chrome's Extensions menu.
 4. In Udemy, open a completed attempt and select **Review questions**. In Tutorials Dojo, open the course page and choose a completed attempt’s **View results** icon, then choose **Focus review**.
@@ -138,11 +138,11 @@ Notes live in this Chrome profile's extension storage, not in Udemy or the deskt
 | Questions & your answers | Question, all options, selected answers, review flag/tag, domain, your notes |
 | Full detail | Everything above, plus correct answers, result tags, overall explanation, and per-choice explanations |
 
-Correct answers come from **Udemy's labels**, never guesses based on the author's explanation order. Full explanations preserve rich text, links, tables, code and image URLs. Authors can explain correct and incorrect choices in any order. Multi-select answers remain arrays in JSON. Skipped questions are included with empty selections.
+Correct answers come from each source platform's result data, never guesses based on the author's explanation order. Full explanations preserve rich text, links, tables, code and image URLs. Authors can explain correct and incorrect choices in any order. Multi-select answers remain arrays in JSON. Skipped questions are included with empty selections.
 
-Desktop exports create a new folder per tab/attempt; browser exports create separately named downloads. Files include source URL, attempt, timestamp, and part number. For example, 88 questions split into 20 gives 20 + 20 + 20 + 20 + 8. Basic mode excludes Udemy's answer-key fields and result tags, but includes your own notes as written. Marked questions include `marked_for_review: true` and a matching tag. Question notes use `notes: {text, updated_at}` in JSON and a Your notes section in Markdown.
+Desktop exports create a new folder per tab/attempt; browser exports create separately named downloads. Files include source URL, attempt, timestamp, and part number. For example, 88 questions split into 20 gives 20 + 20 + 20 + 20 + 8. Basic mode excludes correct-answer fields, explanations and answer-key result tags from either platform, while preserving your own notes. Marked questions include `marked_for_review: true` and a matching tag. Question notes use `notes: {text, updated_at}` in JSON and a Your notes section in Markdown.
 
-Images are referenced by URL, not downloaded or transcribed. URLs can require Udemy access or expire. When asking an LLM about a diagram, attach the diagram as well as the exported text.
+Images are referenced by URL, not downloaded or transcribed. URLs can require access to the source platform or expire. When asking an LLM about a diagram, attach the diagram as well as the exported text.
 
 ### Local data
 
@@ -158,7 +158,7 @@ Exports default to the `exports` subfolder; you can choose another folder. The d
 
 ## Update or uninstall
 
-Close the app before upgrading. Install the new desktop package over the old one. On Linux, run the new binary with `--install` again. Replace files in the extension's permanent folder, reload it at `chrome://extensions`, and refresh open Udemy tabs. Keep the extension path unchanged to retain its settings and notes. Renaming the product to StudyDock does not move existing desktop export directories.
+Close the app before upgrading. Install the new desktop package over the old one. On Linux, run the new binary with `--install` again. Replace files in the extension's permanent folder, reload it at `chrome://extensions`, and refresh open Udemy or Tutorials Dojo tabs. Keep the extension path unchanged to retain its settings and notes. Renaming the product to StudyDock does not move existing desktop export directories.
 
 Uninstall Windows through Installed apps; remove the app from Applications on macOS. On Linux, remove the `app` subfolder from the data directory and `com.himanm.UdemyStudyTools.desktop` from your desktop and `~/.local/share/applications` (or the corresponding XDG location). Your export folders and preferences are kept separately; delete those only if you intend to remove your study data.
 
@@ -166,14 +166,14 @@ Uninstall Windows through Installed apps; remove the app from Applications on ma
 
 - **Waiting for the desktop app:** launch it and keep the Chrome connection tab open. The connector uses `127.0.0.1:8765`; only one app instance can use that port.
 - **No tabs:** clear the search and confirm the extension is installed in the Chrome profile containing the tests.
-- **Chrome denies access:** open and refresh that results tab, allow the extension access to Udemy, and retry.
+- **Chrome denies access:** open and refresh that results tab, allow the extension access to the relevant Udemy or Tutorials Dojo site, and retry.
 - **Missing/count mismatch:** open the desired completed attempt, wait for Review questions to load, select All domains / All questions, and retry. Exports fail rather than silently save an incomplete test.
-- **Unknown layout:** current parsing targets English-language completed Udemy practice tests. The original page remains available when the review parser cannot recognize the layout.
-- **New install/update:** refresh already-open Udemy tabs after loading/reloading the extension.
+- **Unknown layout:** current parsing supports English-language completed Udemy practice tests and Tutorials Dojo result tables. The original page remains available when a review parser cannot recognize the layout.
+- **New install/update:** refresh already-open Udemy or Tutorials Dojo tabs after loading/reloading the extension.
 
 ## Privacy
 
-No analytics, external AI service, passwords, or cookies are sent by this tool. The extension reads the Udemy pages it needs, tab-group names, and its own settings. Notes and a short question preview stay in extension storage. Browser exports download locally. The optional desktop connection sends exports to a loopback-only connector using extension-origin checks and a per-session token. This blocks ordinary web-page access; it is not a security boundary against other programs already running on your computer. Exported files contain course questions, your answers, notes, and source URLs—keep them private as appropriate.
+No analytics, external AI service, passwords, or cookies are sent by this tool. The extension reads supported Udemy and Tutorials Dojo result pages, tab-group names, and its own settings. Notes and a short question preview stay in extension storage. Browser exports download locally. The optional desktop connection sends exports to a loopback-only connector using extension-origin checks and a per-session token. This blocks ordinary web-page access; it is not a security boundary against other programs already running on your computer. Exported files contain course questions, your answers, notes, and source URLs—keep them private as appropriate.
 
 ## Run from source
 
@@ -209,6 +209,6 @@ To release, update the manifest version and `RELEASE_NOTES.md`, commit, then pus
 
 ## Credits and license
 
-MIT, copyright 2026 HimanM. Full-height behavior derives from [Fuck-Udemy-Exam-UI](https://github.com/HimanM/Fuck-Udemy-Exam-UI); its MIT notice remains in `extension/LICENSE-fullheight.txt`. Google [Material Design Icons](https://github.com/google/material-design-icons) are bundled under Apache 2.0, with the license in `extension/icons/LICENSE-material-icons.txt`. This tool is not affiliated with Udemy.
+MIT, copyright 2026 HimanM. Full-height behavior derives from [Fuck-Udemy-Exam-UI](https://github.com/HimanM/Fuck-Udemy-Exam-UI); its MIT notice remains in `extension/LICENSE-fullheight.txt`. Google [Material Design Icons](https://github.com/google/material-design-icons) are bundled under Apache 2.0, with the license in `extension/icons/LICENSE-material-icons.txt`. This tool is not affiliated with Udemy or Tutorials Dojo.
 
 The StudyDock app icon was created with the built-in image-generation tool. Its source artwork and generation prompt are documented in [Brand artwork](docs/brand.md).

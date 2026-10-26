@@ -275,6 +275,8 @@ def main():
         notebook.get_by_text('5 questions ready.',exact=False).wait_for()
         assert notebook.locator('#downloads a').count() == 1
         assert 'Study group' in notebook.locator('#tab').inner_text()
+        notebook.locator('#tab').focus()
+        assert notebook.locator('#tab').evaluate("node=>getComputedStyle(node).outlineOffset==='0px' && getComputedStyle(node).outlineWidth==='1px'")
         screenshot(notebook,'notebook.png',full_page=True)
         with notebook.expect_download() as download:
             notebook.get_by_role('button',name='Download JSON',exact=True).click()
