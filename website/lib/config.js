@@ -1,5 +1,6 @@
 export const REPOSITORY = 'https://github.com/HimanM/Udemy-Study-Tools';
 export const VERSION = '1.4.3';
+export const PREVIEW_VERSION = '1.5.0-rc.1';
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 export const EXTENSION_ZIP = `${BASE_PATH}/downloads/StudyDock-extension.zip`;
 export const PRIVATE_REPOSITORY = process.env.NEXT_PUBLIC_REPO_PRIVATE === 'true';
