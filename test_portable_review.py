@@ -4,7 +4,7 @@ import json
 import tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from extractor import write_export
+from extractor import write_export, prepare_export
 from portable_review import render, filename
 from test_review import diagram_png
 
@@ -26,6 +26,8 @@ def fixture():
 
 def main():
     data=fixture()
+    compact=prepare_export(data)
+    assert "question_html" not in compact["questions"][0] and "text_html" not in compact["questions"][0]["options"][0]
     data['questions'][4]['question_html'] += '<img src="data:image/png;base64,AA==" onerror="window.pwned=1"><script>window.pwned=2</script><a href="javascript:alert(1)">bad</a><svg onload="window.pwned=3"></svg>'
     data['title'] += '</script><script>window.pwned=4</script>'
     with tempfile.TemporaryDirectory() as temp, sync_playwright() as p:

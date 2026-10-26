@@ -17,7 +17,7 @@
   async function chunks(data,value,full) {
     const size = /^all$/i.test(value.trim()) ? data.questions.length : Number(value);
     if (!Number.isSafeInteger(size) || size < 1 || (!/^all$/i.test(value.trim()) && (!/^\d+$/.test(value.trim()) || size < 5))) throw Error('Use a whole number of 5 or more, or All.');
-    const result = StudyDockExport.prepare(data,full), resources = await assets();
+    const result = StudyDockExport.prepare(data,full,true), resources = await assets();
     const parts = Math.ceil(result.questions.length / size), output = [];
     for (let start=0; start<result.questions.length; start+=size) {
       const part = {...result,part:output.length+1,parts,questions:result.questions.slice(start,start+size)};

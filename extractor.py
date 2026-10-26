@@ -101,7 +101,7 @@ def chunk_limit(value):
     return number
 
 
-def prepare_export(data, full=True):
+def prepare_export(data, full=True, rich=False):
     """Whitelist exported fields so basic mode cannot leak answer keys."""
     if not isinstance(data, dict) or not isinstance(data.get("questions"), list) or not data["questions"]:
         raise ValueError("No questions found. Open the completed attempt's Review questions page and retry.")
@@ -117,7 +117,7 @@ def prepare_export(data, full=True):
         fields = ["number", "source_number", "question", "question_html", "selected_answers", "marked_for_review", "tags", "domain", "notes"]
         if full:
             fields += ["correct_answers", "is_correct", "status", "explanation", "explanation_html"]
-        item = {key: copy.deepcopy(question[key]) for key in fields if key in question}
+        item = {key: copy.deepcopy(question[key]) for key in fields if key in question and (rich or not key.endswith("_html"))}
         if "notes" in item:
             note = item["notes"]
             if not isinstance(note, dict) or not isinstance(note.get("text"), str) or len(note["text"]) > 60000:
@@ -125,7 +125,7 @@ def prepare_export(data, full=True):
             item["notes"] = {key: note[key] for key in ("text", "updated_at") if key in note}
         item["options"] = [{key: option[key] for key in
                             (["label", "text", "text_html", "selected", "correct", "explanation", "explanation_html"] if full else
-                             ["label", "text", "text_html", "selected"]) if key in option}
+                             ["label", "text", "text_html", "selected"]) if key in option and (rich or not key.endswith("_html"))}
                            for option in question["options"]]
         # Result tags must follow the same no-answer-key rule as the fields above.
         if not full:
@@ -178,7 +178,7 @@ def write_export(data, folder, fmt, limit, full=True):
     if fmt not in ("json", "md", "html"):
         raise ValueError("Choose JSON, Markdown or offline HTML.")
     limit = chunk_limit("All" if limit is None else limit)
-    data = prepare_export(data, full)
+    data = prepare_export(data, full, rich=fmt == "html")
     total = len(data["questions"])
     size = limit or total
     parts = (total + size - 1) // size

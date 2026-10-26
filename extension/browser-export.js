@@ -1,9 +1,12 @@
 (() => {
-  function prepare(data, full) {
+  function prepare(data, full, rich = false) {
     if (data.error) throw new Error(data.error);
     if (!data.questions?.length || data.expected_count !== data.questions.length) throw new Error('The question count does not match. Open All questions and retry.');
     const result = structuredClone(data);
     result.schema_version = 1; result.exported_at = new Date().toISOString(); result.mode = full ? 'full' : 'questions_and_answers';
+    if (!rich) for (const question of result.questions) for (const item of [question,...question.options]) {
+      for (const key of Object.keys(item)) if (key.endsWith("_html")) delete item[key];
+    }
     if (!full) for (const question of result.questions) {
       for (const key of ['correct_answers','is_correct','status','explanation','explanation_html']) delete question[key];
       question.tags = (question.tags || []).filter(tag => tag === 'marked_for_review');
