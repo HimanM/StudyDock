@@ -22,9 +22,9 @@ Review, notes and browser downloads need only the extension. Reviewing/exporting
 
 ## Install
 
-Download the matching package from [Releases](https://github.com/HimanM/Udemy-Study-Tools/releases). Packaged desktop apps include Python and Tk; you do not need to install Python separately.
+Download the matching package from [Releases](https://github.com/HimanM/StudyDock/releases). Packaged desktop apps include Python and Tk; you do not need to install Python separately.
 
-Release assets include desktop packages and, starting with v1.5.0, a separately named browser-extension ZIP. [Download the v1.5.0 extension ZIP](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.5.0/StudyDock-1.5.0-browser-extension.zip). It contains only browser extension files, with no desktop app or unrelated repository source.
+Release assets include desktop packages and, starting with v1.5.0, a separately named browser-extension ZIP. [Download the v1.5.0 extension ZIP](https://github.com/HimanM/StudyDock/releases/download/v1.5.0/StudyDock-1.5.0-browser-extension.zip). It contains only browser extension files, with no desktop app or unrelated repository source.
 
 | System | Package | Installation |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Release assets include desktop packages and, starting with v1.5.0, a separately 
 
 Linux builds target Ubuntu 22.04 or newer and compatible glibc desktop distributions. No Python, pip, virtual environment, FUSE, or separate app runtime installation is needed. A graphical desktop with its usual X11/XWayland system libraries is required. A single binary cannot cover incompatible CPU/libc families: Alpine/musl, older glibc, and Linux ARM are not covered. See [PyInstaller's Linux compatibility explanation](https://pyinstaller.org/en/stable/usage.html#making-gnu-linux-apps-forward-compatible).
 
-Download the [Linux binary](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.5.0/StudyDock-1.5.0-linux-x64.bin), then run from that download directory:
+Download the [Linux binary](https://github.com/HimanM/StudyDock/releases/download/v1.5.0/StudyDock-1.5.0-linux-x64.bin), then run from that download directory:
 
 ```sh
 chmod +x StudyDock-1.5.0-linux-x64.bin
@@ -60,7 +60,7 @@ Public releases download without a token. Optionally set `GH_TOKEN` or `GITHUB_T
 
 ### Chrome companion
 
-1. Download the [v1.5.0 browser-extension ZIP](https://github.com/HimanM/Udemy-Study-Tools/releases/download/v1.5.0/StudyDock-1.5.0-browser-extension.zip) and extract it into a permanent folder, or use the desktop app's **Chrome setup** button to find its bundled extension.
+1. Download the [v1.5.0 browser-extension ZIP](https://github.com/HimanM/StudyDock/releases/download/v1.5.0/StudyDock-1.5.0-browser-extension.zip) and extract it into a permanent folder, or use the desktop app's **Chrome setup** button to find its bundled extension.
 2. Open `chrome://extensions`, enable **Developer mode**, and select **Load unpacked**.
 3. Choose the extracted folder containing `manifest.json` (or the desktop app's `extension` folder). Pin **StudyDock** from Chrome's Extensions menu.
 4. In Udemy, open a completed attempt and select **Review questions**. In Tutorials Dojo, open the course page and choose a completed attempt’s **View results** icon, then choose **Focus review**.

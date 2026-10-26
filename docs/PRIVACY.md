@@ -42,4 +42,4 @@ Downloaded and desktop-exported files remain until you delete them yourself. Uni
 
 ## Contact and changes
 
-Contact the maintainer through the [StudyDock repository](https://github.com/HimanM/Udemy-Study-Tools) or the contact channels on [HimanM's profile](https://github.com/HimanM). Do not post private course exports, credentials or personal notes in a public issue. The policy will be updated if StudyDock's data handling changes; the date above identifies this version.
+Contact the maintainer through the [StudyDock repository](https://github.com/HimanM/StudyDock) or the contact channels on [HimanM's profile](https://github.com/HimanM). Do not post private course exports, credentials or personal notes in a public issue. The policy will be updated if StudyDock's data handling changes; the date above identifies this version.

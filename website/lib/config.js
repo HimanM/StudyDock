@@ -1,4 +1,4 @@
-export const REPOSITORY = 'https://github.com/HimanM/Udemy-Study-Tools';
+export const REPOSITORY = 'https://github.com/HimanM/StudyDock';
 export const VERSION = '1.5.0';
 export const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || '';
 export const EXTENSION_ZIP = `${BASE_PATH}/downloads/StudyDock-extension.zip`;

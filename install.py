@@ -15,7 +15,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-API = 'https://api.github.com/repos/HimanM/Udemy-Study-Tools/releases'
+API = 'https://api.github.com/repos/HimanM/StudyDock/releases'
 VERSION_PATTERN = r'\d+\.\d+\.\d+(?:-(?:alpha|beta|rc)\.[1-9]\d*)?'
 
 

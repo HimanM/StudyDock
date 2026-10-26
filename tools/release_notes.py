@@ -11,7 +11,7 @@ except ImportError:
     from tools.release_metadata import metadata
 
 ROOT = Path(__file__).resolve().parents[1]
-REPO = 'HimanM/Udemy-Study-Tools'
+REPO = 'HimanM/StudyDock'
 PACKAGES = [('windows', 'Windows x64 installer', 'windows-x64-setup.exe'),
             ('mac-arm', 'macOS Apple Silicon', 'macos-arm64.dmg'),
             ('mac-intel', 'macOS Intel', 'macos-x64.dmg'),
